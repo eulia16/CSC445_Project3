@@ -22,7 +22,6 @@ public class TestFile extends JFrame {
 
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
             private static final long serialVersionUID = 1L;
-
             @Override
             public Class<?> getColumnClass(int columnIndex) {
                 return getValueAt(0, columnIndex).getClass();
