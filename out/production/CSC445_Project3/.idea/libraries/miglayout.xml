@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="miglayout">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../miglayout" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../miglayout" />
+    </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/../miglayout" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/../miglayout" recursive="false" type="SOURCES" />
+  </library>
+</component>

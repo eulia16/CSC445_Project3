@@ -31,7 +31,7 @@ public class RRQPacket extends TFTPPacket {
     }
 
     //constructor which allows URL/file name to be changed
-    public RRQPacket(DatagramPacket packet, int type, String URL, boolean dropPackets, int encrypter) throws UnknownHostException {
+    public RRQPacket(DatagramPacket packet, int type, String URL) throws UnknownHostException {
         super(packet, type);
         this.URL = URL;
         passedPacket = packet;
@@ -58,12 +58,12 @@ public class RRQPacket extends TFTPPacket {
         }
 
         //insert last zero if drop packets is false, else insert 1
-        if(!dropPackets)
-            data[2 + bytesFromURL.length + 1 + modeBytes.length] = 0;
-        else
-            data[2 + bytesFromURL.length + 1 + modeBytes.length] = 1;
-        //insert a random key that will be used for encryption/decryption w/ an XOR
-        data[2 + bytesFromURL.length + 1 + modeBytes.length +1] = (byte)encrypter;
+//        if(!dropPackets)
+//            data[2 + bytesFromURL.length + 1 + modeBytes.length] = 0;
+//        else
+//            data[2 + bytesFromURL.length + 1 + modeBytes.length] = 1;
+//        //insert a random key that will be used for encryption/decryption w/ an XOR
+//        data[2 + bytesFromURL.length + 1 + modeBytes.length +1] = (byte)encrypter;
 
         allRRQHeaderInfo = data;
 

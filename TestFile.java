@@ -32,12 +32,12 @@ public class TestFile extends JFrame {
         table.getColumn("Delete").setCellRenderer(new JButtonRenderer());
         table.getColumn("Delete").setCellEditor(new JButtonEditor());
         table.getColumn("Progress").setCellRenderer(new JProgressBarRenderer());
-        scrollPane = new JScrollPane(table);
+         //scrollPane = new JScrollPane(table);
        // add(scrollPane, BorderLayout.CENTER);
     }
 
-    public JScrollPane getTable(){
-        return this.scrollPane;
+    public JTable getTable(){
+        return this.table;
     }
 
     class JButtonRenderer extends JButton implements TableCellRenderer {
@@ -60,6 +60,8 @@ public class TestFile extends JFrame {
         private String label;
         private boolean isPushed;
 
+        private int rowSelectedToDelete;
+
         public JButtonEditor() {
             super(new JCheckBox());
             button = new JButton();
@@ -75,6 +77,7 @@ public class TestFile extends JFrame {
             if (isSelected) {
                 button.setForeground(table.getSelectionForeground());
                 button.setBackground(table.getSelectionBackground());
+                rowSelectedToDelete = row;
             } else {
                 button.setForeground(table.getForeground());
                 button.setBackground(table.getBackground());
@@ -89,6 +92,7 @@ public class TestFile extends JFrame {
         public Object getCellEditorValue() {
             if (isPushed) {
                 JOptionPane.showMessageDialog(button, label + " has been deleted");
+
             }
             isPushed = false;
             return new String(label);
@@ -101,6 +105,7 @@ public class TestFile extends JFrame {
 
         protected void fireEditingStopped() {
             super.fireEditingStopped();
+            ((DefaultTableModel)table.getModel()).removeRow(rowSelectedToDelete);
         }
     }
 
