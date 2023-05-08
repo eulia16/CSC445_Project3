@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 
 //this will be the main driver class for the client side code,
 //in the case of this project the client will also serve as the distributer of
@@ -9,7 +10,11 @@ public class main {
 
     //call interface/GUI code to allow for the program to begin
     public static void main(String[] argz) {
-        TestFile test = new TestFile();
+        ArrayList<Integer> temp = new ArrayList<Integer>();
+        temp.add(0, 10);
+        temp.add(1, 20);
+        temp.add(2, 30);
+        TestFile test = new TestFile(temp);
     }
 
 }
