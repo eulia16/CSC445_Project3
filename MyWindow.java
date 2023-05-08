@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -25,13 +26,19 @@ public class MyWindow extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
+    private int currentDownloadIndex=0;
+
+    private int MAX_NUM_THREADS = 15;
+
     private String proxyString="pi.cs.oswego.edu";
 
     private InetAddress address = InetAddress.getByName(proxyString);
 
     private int currentRowSelected;
 
-    String currentSelectedFile=null;
+    private ArrayList<Integer> keepTrackOfRowCountForConcurrency = new ArrayList<Integer>();
+
+    String currentSelectedFile = null;
 
     private int PORT=26974;
     private JLabel projectNameLabel;
@@ -48,6 +55,8 @@ public class MyWindow extends JFrame {
     private DatagramSocket proxyServerConnectedTo;
 
     private JToggleButton uploadOrDownloadOption;
+
+    private ArrayList<SwingWorker> currentThreadsJProgressBars = new ArrayList<>();
 
 
     //contrastButton = new JToggleButton(new ImageIcon(unclickedButtonImage));
@@ -110,66 +119,11 @@ public class MyWindow extends JFrame {
 
                     //we will use a swing worker to handle each time the button is pressed, to break off a new
                     //swing worker thread, and begin the sliding windows download
-                    SwingWorker<byte[], Void> worker = new SwingWorker<byte[], Void>() {
-                        @Override
-                        protected byte[] doInBackground() throws Exception {
-                            //for each progress bar, set it as zero and then update the progress
-                            int progress = 0;
-                            Random random = new Random();
-                            //System.out.println("class of part in table: "+;//  .getColumnClass(1).);// .getValueAt(currentRowSelected, 1).getClass());
-                            setProgress(0);
-                            while (progress < 100) {
 
-                                //Sleep for up to one second.
-                                try {
-                                    Thread.sleep(random.nextInt(200));
-                                } catch (InterruptedException ignore) {}
-
-                                progress++;
-
-                                ((DefaultTableModel) table.getModel()).setValueAt(progress, table.getRowCount()-1, 1);
-
-                            }
-                            byte[] downloadedFileFromSlidingWindows = slidingWindows();
-                            return downloadedFileFromSlidingWindows;
-                        }
-
-                        //when the sliding windows is finished, we will add the file to an array list of all
-                        //the files that have been downloaded
-                        @Override
-                        protected void done(){
-                            try {
-                                //get file data
-                                byte[] downloadedFile = get();
-                                //create file object
-                                File file = new File( "tempName"+ ".jpg");
-                                //add to current files that have been downloaded
-                                downloadedFiles.add(file);
-                                //persist the file to a specific path
-                                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
-                                bos.write(downloadedFile);
-                                bos.close();
-
-                            } catch (InterruptedException ex) {
-                                throw new RuntimeException(ex);
-                            } catch (ExecutionException ex) {
-                                throw new RuntimeException(ex);
-                            } catch (FileNotFoundException ex) {
-                                throw new RuntimeException(ex);
-                            } catch (IOException ex) {
-                                throw new RuntimeException(ex);
-                            }
-
-                        }
-                    };
-                    //execute the swing worker
-                    worker.execute();
-                    table.getModel().addTableModelListener(new TableModelListener() {
-                        @Override
-                        public void tableChanged(TableModelEvent e) {
-
-                        }
-                    });
+                    keepTrackOfRowCountForConcurrency.add(currentDownloadIndex, table.getRowCount()-1);
+                    doTheSwingThing(keepTrackOfRowCountForConcurrency.get(currentDownloadIndex));
+                    currentDownloadIndex++;
+                    System.out.println("len of arrayList:" + currentThreadsJProgressBars.size() + ", current index: " + currentDownloadIndex);
 
                 } catch (UnknownHostException ex) {
                     throw new RuntimeException(ex);
@@ -204,7 +158,8 @@ public class MyWindow extends JFrame {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(10, 110, 10, 10);
-        TestFile testFile = new TestFile();
+        TestFile testFile = new TestFile(keepTrackOfRowCountForConcurrency);
+
         this.table = testFile.getTable();
         add(this.table, gbc);
 
@@ -252,7 +207,7 @@ public class MyWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.out.println("This will send a specific type of request packet to the proxy server and retireve the list of available files to download");
-                String[] allCurrentFiles = sendRRQToGetPackets();
+                String[] allCurrentFiles = sendFRRQToGetPackets();
                  //String week[]= { "Fuck","This","Shit"};
                 fileHolders.setListData(allCurrentFiles);
 
@@ -296,6 +251,68 @@ public class MyWindow extends JFrame {
 
     }
 
+    public SwingWorker doTheSwingThing(int rowShit){
+        SwingWorker<byte[], Void> worker = new SwingWorker<byte[], Void>() {
+            @Override
+            protected byte[] doInBackground() throws Exception {
+                //for each progress bar, set it as zero and then update the progress
+                int progress = 0;
+                Random random = new Random();
+                //System.out.println("class of part in table: "+;//  .getColumnClass(1).);// .getValueAt(currentRowSelected, 1).getClass());
+                setProgress(0);
+                while (progress < 100) {
+
+                    //Sleep for up to one second.
+                    try {
+                        Thread.sleep(random.nextInt(200));
+                    } catch (InterruptedException ignore) {
+                        System.out.println("Thread was interrupted");
+                    }
+
+                    progress++;
+
+                    System.out.println("current Row being changed: " + String.valueOf(table.getRowCount()-1));
+                    ((DefaultTableModel) table.getModel()).setValueAt(progress, rowShit, 1);
+
+                }
+                byte[] downloadedFileFromSlidingWindows = slidingWindows();
+                return downloadedFileFromSlidingWindows;
+            }
+
+            //when the sliding windows is finished, we will add the file to an array list of all
+            //the files that have been downloaded
+            @Override
+            protected void done(){
+                try {
+                    //get file data
+                    byte[] downloadedFile = get();
+                    //create file object
+                    File file = new File( "tempName"+ ".jpg");
+                    //add to current files that have been downloaded
+                    downloadedFiles.add(file);
+                    JOptionPane.showMessageDialog(null, "File: " + (((DefaultTableModel) table.getModel()).getValueAt(rowShit, 0).toString()) + " has been downloaded, you will find it in your local file path");
+
+                    //persist the file to a specific path
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+                    bos.write(downloadedFile);
+                    bos.close();
+
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                } catch (ExecutionException ex) {
+                    throw new RuntimeException(ex);
+                } catch (FileNotFoundException ex) {
+                    throw new RuntimeException(ex);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+            }
+        };
+        //execute the swing worker
+        worker.execute();
+        return worker;
+    }
 
     public void setButtonIconCircle(JToggleButton button){
         button.setPreferredSize(new Dimension(20, 20));
@@ -303,7 +320,7 @@ public class MyWindow extends JFrame {
         button.setBorder(BorderFactory.createEmptyBorder());
     }
 
-    public String[] sendRRQToGetPackets(){
+    public String[] sendFRRQToGetPackets(){
         //try {
 //                    //create the request file packet
 //                    FRRQ fileReadRequestPacket = new FRRQ(new DatagramPacket(new byte[5], 5, address, PORT), 8);

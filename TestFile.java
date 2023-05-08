@@ -3,6 +3,8 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 public class TestFile extends JFrame {
 
@@ -10,14 +12,14 @@ public class TestFile extends JFrame {
     private JTable table;
     JScrollPane scrollPane;
 
-    public TestFile() {
+    public TestFile(ArrayList<Integer> val) {
 
         String[] columnNames = {"Name", "Progress", "Delete"};
 
         Object[][] data = {
-                {"File 1", 0, "Delete"},
-                {"File 2", 0, "Delete"},
-                {"File 3", 0, "Delete"}
+                {"Example 1", 0, "Delete"},
+                {"Example 2", 25, "Delete"},
+                {"Example 3", 75, "Delete"}
         };
 
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
@@ -30,7 +32,7 @@ public class TestFile extends JFrame {
 
         table = new JTable(model);
         table.getColumn("Delete").setCellRenderer(new JButtonRenderer());
-        table.getColumn("Delete").setCellEditor(new JButtonEditor());
+        table.getColumn("Delete").setCellEditor(new JButtonEditor(val));
         table.getColumn("Progress").setCellRenderer(new JProgressBarRenderer());
          //scrollPane = new JScrollPane(table);
        // add(scrollPane, BorderLayout.CENTER);
@@ -57,13 +59,16 @@ public class TestFile extends JFrame {
         private static final long serialVersionUID = 1L;
         protected JButton button;
 
+        private ArrayList<Integer> val;
+
         private String label;
         private boolean isPushed;
 
         private int rowSelectedToDelete;
 
-        public JButtonEditor() {
+        public JButtonEditor(ArrayList<Integer> val) {
             super(new JCheckBox());
+            this.val = val;
             button = new JButton();
             button.setOpaque(true);
             button.addActionListener(new ActionListener() {
@@ -92,7 +97,6 @@ public class TestFile extends JFrame {
         public Object getCellEditorValue() {
             if (isPushed) {
                 JOptionPane.showMessageDialog(button, label + " has been deleted");
-
             }
             isPushed = false;
             return new String(label);
@@ -106,6 +110,17 @@ public class TestFile extends JFrame {
         protected void fireEditingStopped() {
             super.fireEditingStopped();
             ((DefaultTableModel)table.getModel()).removeRow(rowSelectedToDelete);
+            System.out.println("the delete button was pressed");
+            shiftValuesByOne(this.val);
+        }
+
+        public void setIntArray(ArrayList<Integer> values){
+            this.val = values;
+        }
+        public void shiftValuesByOne(ArrayList<Integer> values){
+            for(Integer i : values){
+                values.set(i, values.get(i) - 1);
+            }
         }
     }
 
@@ -126,6 +141,10 @@ public class TestFile extends JFrame {
     }
 
     public static void main(String[] args) {
-        new TestFile();
+        ArrayList<Integer> temp = new ArrayList<Integer>();
+        temp.add(0, 10);
+        temp.add(1, 20);
+        temp.add(2, 30);
+        new TestFile(temp);
     }
 }
