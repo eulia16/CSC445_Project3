@@ -120,7 +120,6 @@ public class TestFile extends JFrame {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                        boolean hasFocus, int row, int column) {
             int progress = Integer.parseInt(value.toString());
-            progress = 30;
             setValue(progress);
             return this;
         }

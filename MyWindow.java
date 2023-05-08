@@ -8,12 +8,15 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 
 public class MyWindow extends JFrame {
@@ -25,6 +28,8 @@ public class MyWindow extends JFrame {
     private String proxyString="pi.cs.oswego.edu";
 
     private InetAddress address = InetAddress.getByName(proxyString);
+
+    private int currentRowSelected;
 
     String currentSelectedFile=null;
 
@@ -97,7 +102,7 @@ public class MyWindow extends JFrame {
                     ((DefaultTableModel)table.getModel()).addRow(data);
 
                     //add name of file to the texg field
-                    fileNameTextField.setText(currentSelectedFile);
+                    fileNameTextField.setText(currentSelectedFile.toString());
 
                     //after sending the packet, we will need to break off and create a new class to handle the
                     //downloading and uploading, as well as popping a new file to the jlist and keeping the progress
@@ -108,6 +113,23 @@ public class MyWindow extends JFrame {
                     SwingWorker<byte[], Void> worker = new SwingWorker<byte[], Void>() {
                         @Override
                         protected byte[] doInBackground() throws Exception {
+                            //for each progress bar, set it as zero and then update the progress
+                            int progress = 0;
+                            Random random = new Random();
+                            //System.out.println("class of part in table: "+;//  .getColumnClass(1).);// .getValueAt(currentRowSelected, 1).getClass());
+                            setProgress(0);
+                            while (progress < 100) {
+
+                                //Sleep for up to one second.
+                                try {
+                                    Thread.sleep(random.nextInt(200));
+                                } catch (InterruptedException ignore) {}
+
+                                progress++;
+
+                                ((DefaultTableModel) table.getModel()).setValueAt(progress, table.getRowCount()-1, 1);
+
+                            }
                             byte[] downloadedFileFromSlidingWindows = slidingWindows();
                             return downloadedFileFromSlidingWindows;
                         }
@@ -142,6 +164,12 @@ public class MyWindow extends JFrame {
                     };
                     //execute the swing worker
                     worker.execute();
+                    table.getModel().addTableModelListener(new TableModelListener() {
+                        @Override
+                        public void tableChanged(TableModelEvent e) {
+
+                        }
+                    });
 
                 } catch (UnknownHostException ex) {
                     throw new RuntimeException(ex);
@@ -192,6 +220,7 @@ public class MyWindow extends JFrame {
                 if (!e.getValueIsAdjusting()){
                     JList source = (JList)e.getSource();
                     currentSelectedFile = source.getSelectedValue().toString();
+                    currentRowSelected = source.getSelectedIndex();
                 }
                 System.out.println("current Selected File: " + currentSelectedFile);
             }
@@ -226,7 +255,6 @@ public class MyWindow extends JFrame {
                 String[] allCurrentFiles = sendRRQToGetPackets();
                  //String week[]= { "Fuck","This","Shit"};
                 fileHolders.setListData(allCurrentFiles);
-
 
             }
         });
