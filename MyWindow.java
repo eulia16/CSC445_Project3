@@ -7,11 +7,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Vector;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import javax.crypto.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -19,6 +19,24 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
+//security imports
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Base64;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 
 public class MyWindow extends JFrame {
 
@@ -29,6 +47,9 @@ public class MyWindow extends JFrame {
     private int currentDownloadIndex=0;
 
     private int MAX_NUM_THREADS = 15;
+
+    private static final String SECRET_KEY = "681111171037610197";
+    private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
 
     private String proxyString="pi.cs.oswego.edu";
 
@@ -58,6 +79,7 @@ public class MyWindow extends JFrame {
 
     private ArrayList<SwingWorker> currentThreadsJProgressBars = new ArrayList<>();
 
+    private JLabel availableToDownload = new JLabel("Files Available" + "\n" + "For Download");
 
     //contrastButton = new JToggleButton(new ImageIcon(unclickedButtonImage));
     //setButtonIconCircle(contrastButton);
@@ -77,6 +99,7 @@ public class MyWindow extends JFrame {
 
         // Create the components
         projectNameLabel = new JLabel("Baby Torrent");
+
         String proxyConnectedTo = "pi.cs.oswego.edu";
         proxyServerLabel = new JLabel("Proxy Server Connected To: " + proxyConnectedTo);
         tablePanel = new JPanel();
@@ -101,7 +124,6 @@ public class MyWindow extends JFrame {
                         return;
                     }
                     RRQPacket packetToSend = new RRQPacket(temp, 01, currentSelectedFile);
-                    System.out.println("This would now send an RRQ packet to the server, asking to download this file: " + currentSelectedFile);
 //                    somehow grab the name of the file that has been selected
 //                    and send that as the bytes for the RRQ packet
 //                    send a request to the proxyServer with a request for this machine to start downloading
@@ -119,11 +141,10 @@ public class MyWindow extends JFrame {
 
                     //we will use a swing worker to handle each time the button is pressed, to break off a new
                     //swing worker thread, and begin the sliding windows download
-
+                    currentDownloadIndex++;
                     keepTrackOfRowCountForConcurrency.add(currentDownloadIndex, table.getRowCount()-1);
                     doTheSwingThing(keepTrackOfRowCountForConcurrency.get(currentDownloadIndex));
-                    currentDownloadIndex++;
-                    System.out.println("len of arrayList:" + currentThreadsJProgressBars.size() + ", current index: " + currentDownloadIndex);
+
 
                 } catch (UnknownHostException ex) {
                     throw new RuntimeException(ex);
@@ -163,6 +184,7 @@ public class MyWindow extends JFrame {
         this.table = testFile.getTable();
         add(this.table, gbc);
 
+        keepTrackOfRowCountForConcurrency.add(0, table.getRowCount()-1);
 
         //temp for now
         JList fileHolders;
@@ -177,13 +199,10 @@ public class MyWindow extends JFrame {
                     currentSelectedFile = source.getSelectedValue().toString();
                     currentRowSelected = source.getSelectedIndex();
                 }
-                System.out.println("current Selected File: " + currentSelectedFile);
             }
         });
 
-
         fileHolders.setPreferredSize(new Dimension(100,100));
-
 
         //we need to send a request for a return of available files to download from the proxy server
         gbc.gridx = 0;
@@ -210,6 +229,17 @@ public class MyWindow extends JFrame {
                 String[] allCurrentFiles = sendFRRQToGetPackets();
                  //String week[]= { "Fuck","This","Shit"};
                 fileHolders.setListData(allCurrentFiles);
+
+                String blep = "HOLOAAAAAAAAAAAA";
+                byte[] testString = blep.getBytes();
+                String s = new String(testString);
+                String encryptedval = encrypt(s);
+                /* Call the decrypt() method and store result of decryption. */
+                String decryptedval = decrypt(encryptedval);
+
+                System.out.println("Original value: " + testString);
+                System.out.println("Encrypted value: " + encryptedval);
+                System.out.println("Decrypted value: " + decryptedval);
 
             }
         });
@@ -248,7 +278,6 @@ public class MyWindow extends JFrame {
         gbc.insets = new Insets(10, 10, 10, 10);
         add(uploadFileButton, gbc);
 
-
     }
 
     public SwingWorker doTheSwingThing(int rowShit){
@@ -258,7 +287,6 @@ public class MyWindow extends JFrame {
                 //for each progress bar, set it as zero and then update the progress
                 int progress = 0;
                 Random random = new Random();
-                //System.out.println("class of part in table: "+;//  .getColumnClass(1).);// .getValueAt(currentRowSelected, 1).getClass());
                 setProgress(0);
                 while (progress < 100) {
 
@@ -271,7 +299,6 @@ public class MyWindow extends JFrame {
 
                     progress++;
 
-                    System.out.println("current Row being changed: " + String.valueOf(table.getRowCount()-1));
                     ((DefaultTableModel) table.getModel()).setValueAt(progress, rowShit, 1);
 
                 }
@@ -287,7 +314,7 @@ public class MyWindow extends JFrame {
                     //get file data
                     byte[] downloadedFile = get();
                     //create file object
-                    File file = new File( "tempName"+ ".jpg");
+                    File file = new File(((DefaultTableModel) table.getModel()).getValueAt(rowShit, 0) + ".jpg");
                     //add to current files that have been downloaded
                     downloadedFiles.add(file);
                     JOptionPane.showMessageDialog(null, "File: " + (((DefaultTableModel) table.getModel()).getValueAt(rowShit, 0).toString()) + " has been downloaded, you will find it in your local file path");
@@ -300,7 +327,8 @@ public class MyWindow extends JFrame {
                 } catch (InterruptedException ex) {
                     throw new RuntimeException(ex);
                 } catch (ExecutionException ex) {
-                    throw new RuntimeException(ex);
+//                  throw new RuntimeException(ex);
+                    System.out.println("download was cancelled, aborting download for this file");
                 } catch (FileNotFoundException ex) {
                     throw new RuntimeException(ex);
                 } catch (IOException ex) {
@@ -312,12 +340,6 @@ public class MyWindow extends JFrame {
         //execute the swing worker
         worker.execute();
         return worker;
-    }
-
-    public void setButtonIconCircle(JToggleButton button){
-        button.setPreferredSize(new Dimension(20, 20));
-        button.setContentAreaFilled(false);
-        button.setBorder(BorderFactory.createEmptyBorder());
     }
 
     public String[] sendFRRQToGetPackets(){
@@ -377,5 +399,63 @@ public class MyWindow extends JFrame {
         return bytes;
     }
 
+    public static String encrypt(String strToEncrypt) {
+        try {
+            /* Declare a byte array. */
+            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
+            /* Create factory for secret keys. */
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            /* PBEKeySpec class implements KeySpec interface. */
+            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+            // Reruns encrypted value
+            return Base64.getEncoder()
+                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /* Decryption Method */
+    public static String decrypt(String strToDecrypt)
+    {
+        try
+        {
+            /* Declare a byte array. */
+            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
+            /* Create factory for secret keys. */
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            /* PBEKeySpec class implements KeySpec interface. */
+            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+            /* Retruns decrypted value. */
+            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+        }
+        catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
+        {
+            System.out.println("Error occured during decryption: " + e.toString());
+        }
+        return null;
+    }
 
 }

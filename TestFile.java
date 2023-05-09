@@ -6,6 +6,9 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+
+
+
 public class TestFile extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -18,8 +21,8 @@ public class TestFile extends JFrame {
 
         Object[][] data = {
                 {"Example 1", 0, "Delete"},
-                {"Example 2", 25, "Delete"},
-                {"Example 3", 75, "Delete"}
+//                {"Example 2", 25, "Delete"},
+//                {"Example 3", 75, "Delete"}
         };
 
         DefaultTableModel model = new DefaultTableModel(data, columnNames) {
@@ -111,6 +114,7 @@ public class TestFile extends JFrame {
             super.fireEditingStopped();
             ((DefaultTableModel)table.getModel()).removeRow(rowSelectedToDelete);
             System.out.println("the delete button was pressed");
+            this.val.remove(rowSelectedToDelete);
             shiftValuesByOne(this.val);
         }
 
@@ -118,6 +122,7 @@ public class TestFile extends JFrame {
             this.val = values;
         }
         public void shiftValuesByOne(ArrayList<Integer> values){
+            System.out.println("inside shift by one");
             for(Integer i : values){
                 values.set(i, values.get(i) - 1);
             }
@@ -130,6 +135,7 @@ public class TestFile extends JFrame {
             setOpaque(true);
             setMinimum(0);
             setMaximum(100);
+            setStringPainted(true);
         }
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
@@ -147,4 +153,5 @@ public class TestFile extends JFrame {
         temp.add(2, 30);
         new TestFile(temp);
     }
+
 }
