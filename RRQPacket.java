@@ -56,14 +56,11 @@ public class RRQPacket extends TFTPPacket {
             //insert data at end of header
             data[2 + bytesFromURL.length + 1 + i] = modeBytes[i];
         }
+        data[2 + bytesFromURL.length + 1 + modeBytes.length ] = -1;
 
-        //insert last zero if drop packets is false, else insert 1
-//        if(!dropPackets)
-//            data[2 + bytesFromURL.length + 1 + modeBytes.length] = 0;
-//        else
-//            data[2 + bytesFromURL.length + 1 + modeBytes.length] = 1;
-//        //insert a random key that will be used for encryption/decryption w/ an XOR
-//        data[2 + bytesFromURL.length + 1 + modeBytes.length +1] = (byte)encrypter;
+//        data[2 + bytesFromURL.length + 1 + modeBytes.length +1] = (byte)(port & 0xFF); // store the lower byte in the first slot
+//        data[2 + bytesFromURL.length + 1 + modeBytes.length +2] = (byte)((port >> 8) & 0xFF); // store the upper byte in the second slot
+//        data[2 + bytesFromURL.length + 1 + modeBytes.length +3] = -1;
 
         allRRQHeaderInfo = data;
 
@@ -84,9 +81,9 @@ public class RRQPacket extends TFTPPacket {
     }
     public DatagramPacket getRRQPacket(){
         //change current passed data to new header RRQ data
-        this.passedPacket.setData(this.allRRQHeaderInfo);
-        //return the passedPacket
-        return this.passedPacket;
+         this.passedPacket.setData(this.allRRQHeaderInfo);
+         //return the passedPacket
+         return this.passedPacket;
     }
 
 }

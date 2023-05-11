@@ -134,7 +134,7 @@ public class MyWindow extends JFrame {
                     Object[] data = {currentSelectedFile, 0, "Delete"};
                     ((DefaultTableModel)table.getModel()).addRow(data);
 
-                    //add name of file to the texg field
+                    //add name of file to the text field
                     fileNameTextField.setText(currentSelectedFile.toString());
 
                     //after sending the packet, we will need to break off and create a new class to handle the

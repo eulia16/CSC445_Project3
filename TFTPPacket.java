@@ -69,7 +69,6 @@ public abstract class TFTPPacket {
     private final int ACK = 4;
     private final int DATA = 3;
     private final int WRQ = 2;
-    private final int FRRQ = 8;
     private final int RRQ = 1;
     //default port from ports given by professor
     public int PORT = 26971;
@@ -97,22 +96,24 @@ public abstract class TFTPPacket {
         byte type = data[1];
         if(type == RRQ)
             temp = new RRQPacket(packet, type);
-        else if (type == FRRQ) {
-            temp = new FRRQ(packet, type);
-        }
+        else if(type == WRQ)
+            temp = new WRQPacket(packet, type);
+        else if(type == DATA)
+            temp = new DATAPacket(packet, type);
+        else if(type == ERROR)
+            temp = new ERRORPacket(packet, type);
+        else if(type == OACK)
+            temp = new OACKPacket(packet, type);
+        else if(type == ACK)
+            temp = new ACKPacket(packet, type, 0, 0);
         else
-            temp = null;
-//        else if(type == DATA)
-//            temp = new DATAPacket(packet, type);
-//        else if(type == ERROR)
-//            temp = new ERRORPacket(packet, type);
-//        else if(type == OACK)
-//            temp = new OACKPacket(packet, type);
-//        else
-//            temp = new ACKPacket(packet, type, 0, 0);
+            temp = new SACKPacket(packet, type, 0);
 
         return temp;
     }
+
+
+
 
     //simple setters/getters
     public void setType(int opCode){
@@ -139,4 +140,24 @@ public abstract class TFTPPacket {
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
