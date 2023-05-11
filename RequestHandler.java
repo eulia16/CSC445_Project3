@@ -13,7 +13,7 @@ public class RequestHandler implements Runnable{
    HashMap<String, DatagramPacket> retainingOACKForSlidingWindowsData = new HashMap<>();
 
    HashMap<String, Long> lastReceivedPacketFrom = new HashMap<String, Long>();
-   String[] allowedServersToConnectTo = {"rho.cs.oswego.edu", "moxie.cs.oswego.edu","wolf.cs.oswego.edu", "lambda.cs.oswego.edu"};
+   String[] allowedServersToConnectTo = {"pi.cs.oswego.edu", "moxie.cs.oswego.edu"};//,"wolf.cs.oswego.edu", "lambda.cs.oswego.edu"};
 
     public RequestHandler(DatagramPacket request, int portToUse) throws SocketException, UnknownHostException {
         this.request = request;
@@ -45,7 +45,7 @@ public class RequestHandler implements Runnable{
         System.out.println("A request has been made, new request handler instantiated");
         try {
             sendRequestsToAllServers();
-            beginRoundRobinDataTransmission();
+            //beginRoundRobinDataTransmission();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -97,16 +97,19 @@ public class RequestHandler implements Runnable{
 
             //send the request
             socket.send(request);
+            System.out.println("sent request");
             //if not received in 1 second, server will not be considered for data transmission
-            socket.setSoTimeout(1000);
+            socket.setSoTimeout(3000);
             //receive the ack
             DatagramPacket receiveACK = new DatagramPacket(new byte[1024], 1024);
+            System.out.println("Awaiting OACK packet");
             socket.receive(receiveACK);
-
             //get the address of the server that sent an ACK
-            String receivedACKFrom = new String(receiveACK.getAddress().getAddress());
+            String receivedACKFrom = new String(receiveACK.getAddress().getHostName());
+            System.out.println("received packet from: " + receivedACKFrom);
             //if the packet is an ACK and the string matches the string for this loop, add it to the hashmap
             if(receiveACK.getData()[1] == 4 && receivedACKFrom.equalsIgnoreCase(s)){
+                System.out.println("received OACK packet from: " + receiveACK.getAddress().getHostName());
                 //the ACK must have the size of the file/the number of packets in the header info
                 //set file size data,by multiplying the total num of packets w the data packet size
                 redundantDataFromServers.put(s, new byte[((receiveACK.getData()[5]) << 8 | (receiveACK.getData()[4] & 0xFF))
@@ -114,6 +117,7 @@ public class RequestHandler implements Runnable{
                 //key OACK in memory for sliding windows to know abt its data
                 retainingOACKForSlidingWindowsData.put(s, receiveACK);
             }
+            System.out.println("Something wrong happened");
 
 
         }

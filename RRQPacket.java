@@ -56,7 +56,7 @@ public class RRQPacket extends TFTPPacket {
             //insert data at end of header
             data[2 + bytesFromURL.length + 1 + i] = modeBytes[i];
         }
-        data[2 + bytesFromURL.length + 1 + modeBytes.length ] = -1;
+        data[2 + bytesFromURL.length + 1 + modeBytes.length +1] = -1;
 
 //        data[2 + bytesFromURL.length + 1 + modeBytes.length +1] = (byte)(port & 0xFF); // store the lower byte in the first slot
 //        data[2 + bytesFromURL.length + 1 + modeBytes.length +2] = (byte)((port >> 8) & 0xFF); // store the upper byte in the second slot

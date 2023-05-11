@@ -51,7 +51,7 @@ public class MyWindow extends JFrame {
     private static final String SECRET_KEY = "681111171037610197";
     private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
 
-    private String proxyString="pi.cs.oswego.edu";
+    private String proxyString="rho.cs.oswego.edu";
 
     private InetAddress address = InetAddress.getByName(proxyString);
 
