@@ -392,7 +392,7 @@ public class ProxyServer {
 
                 System.out.println("remaining data length: " + remainingDataByte.length);
                 DatagramPacket lastPacket = new DatagramPacket(remainingDataByte, remainingDataByte.length ,clientAddress, PORT);
-                DATAPacket dataPacket = new DATAPacket(lastPacket, 3, packetsToSend.size(), ENCRYPT_VALUE);
+                DATAPacket dataPacket = new DATAPacket(lastPacket, 3, packetsToSend.size());
                 DatagramPacket lastDataPacket = dataPacket.getDatagramPacket();
                 packetsToSend.add(lastDataPacket);
                 break;
@@ -409,7 +409,7 @@ public class ProxyServer {
             //get block number(length of array list holding all packets)
             int blockNum = packetsToSend.size();
             //instantiate new datapacket object, w/ current block number
-            DATAPacket dataPacket = new DATAPacket(datagram, 3, blockNum, ENCRYPT_VALUE);
+            DATAPacket dataPacket = new DATAPacket(datagram, 3, blockNum);
             //get datagram packet to add to list
             DatagramPacket newDatagram = dataPacket.getDatagramPacket();
             //for testing putposes we will grab the block number to ensure accuracy

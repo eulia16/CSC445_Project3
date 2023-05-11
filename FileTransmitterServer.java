@@ -18,18 +18,21 @@ public FileTransmitterServer() throws IOException {
     socket = new DatagramSocket(PORT);
 
     for(;;) {
+
         System.out.println("Awaiting request from proxy Server");
         DatagramPacket receivePacket  = new DatagramPacket(new byte[2048], 2048);
         socket.receive(receivePacket);
         System.out.println("received a packet from the proxy server: " + receivePacket.getAddress().getHostName());
         System.out.println("port:" + PORT);
-          //new ServerSlidingWindows(receivePacket).run();
-        OACKPacket packet = new OACKPacket(new DatagramPacket(new byte[1024], 1024, receivePacket.getAddress(), receivePacket.getPort()), 4, 64, 387);
-        System.out.println("created OACK packet, sending now");
-        DatagramPacket holder = packet.getDatagramPacket();
-        System.out.println("address of packet to be sent: " + holder.getAddress() + ", port of packet to be sent; " + holder.getPort());
-        socket.send(packet.getDatagramPacket());
-        System.out.println("OACK packet sent");
+        new ServerSlidingWindows(receivePacket).run();
+//        OACKPacket packet = new OACKPacket(new DatagramPacket(new byte[1024], 1024, receivePacket.getAddress(), receivePacket.getPort()), 4, 64, 387);
+//        System.out.println("created OACK packet, sending now");
+//        DatagramPacket holder = packet.getDatagramPacket();
+//        System.out.println("address of packet to be sent: " + holder.getAddress() + ", port of packet to be sent; " + holder.getPort());
+//        socket.send(packet.getDatagramPacket());
+//        System.out.println("OACK packet sent");
+//
+//
 
     }
 

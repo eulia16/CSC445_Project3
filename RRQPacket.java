@@ -47,6 +47,7 @@ public class RRQPacket extends TFTPPacket {
         for(int i=0; i< bytesFromURL.length; ++i){
             data[2 + i] = bytesFromURL[i];
         }
+
         //insert 0 for separation
         data[2 + bytesFromURL.length ] = 0;
         //insert mode (only octet)

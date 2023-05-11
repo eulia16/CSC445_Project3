@@ -53,6 +53,7 @@ public class SlidingWindows implements  Runnable{
         int[] packetNumbersReceived = new int[TOTAL_NUM_PACKETS];
         Queue<Integer> toAck = new LinkedList<>();
         int nextAckToReceive =0;
+        System.out.println("Inside sliding windows");
 
         //continue to receive data and send acks for however many packets there are
         while( count < TOTAL_NUM_PACKETS - 1){
@@ -114,7 +115,7 @@ public class SlidingWindows implements  Runnable{
 
 
         //persist a new file with the name of the server it was downloaded from, as well as the name of the file
-        File file = new File(packetFromServer.getAddress().getHostName() + fileName + ".jpg");
+        File file = new File(packetFromServer.getAddress().getHostName() + fileName + ".jpeg");
         BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
         bos.write(pictureData);
         bos.close();

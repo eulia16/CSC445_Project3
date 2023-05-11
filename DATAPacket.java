@@ -38,7 +38,7 @@ public class DATAPacket extends TFTPPacket{
 
 
     }
-    public DATAPacket(DatagramPacket packet, int type, int blockNum, int encryptKey) throws UnknownHostException {
+    public DATAPacket(DatagramPacket packet, int type, int blockNum) throws UnknownHostException {
         super(packet, type);
         this.passedPacket = packet;
 
@@ -54,7 +54,6 @@ public class DATAPacket extends TFTPPacket{
         headerInfo[3] = (byte)((blockNum >> 8) & 0xFF); // store the upper byte in the second slot
 
         this.blockNumber = blockNum;
-        headerInfo = XOR(headerInfo, encryptKey);
 
 
 

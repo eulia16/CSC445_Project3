@@ -86,8 +86,10 @@ public class RequestHandler implements Runnable{
         while(request.getData()[counter] != -1){
             counter++;
         }
-        request.getData()[counter] = (byte)(portToUse & 0xFF); // store the lower byte in the first slot
-        request.getData()[counter] = (byte)((portToUse >> 8) & 0xFF); // store the upper byte in the second slot
+        request.getData()[counter+1] = (byte)(portToUse & 0xFF); // store the lower byte in the first slot
+        request.getData()[counter+2] = (byte)((portToUse >> 8) & 0xFF); // store the upper byte in the second slot
+
+        request.getData()[counter+3] = -1;
 
 
 //        request.setPort(portToUse);
@@ -106,9 +108,12 @@ public class RequestHandler implements Runnable{
             socket.receive(receiveACK);
             //get the address of the server that sent an ACK
             String receivedACKFrom = new String(receiveACK.getAddress().getHostName());
-            System.out.println("received packet from: " + receivedACKFrom);
+            System.out.println("received packet from: " + receivedACKFrom + ", length: " + receivedACKFrom.length());
+            System.out.println("Current string: " + s + ", length: " + receivedACKFrom.length());
+            System.out.println("opCode: " + receiveACK.getData()[1]);
+            System.out.println("value: " + receivedACKFrom.compareToIgnoreCase(s));
             //if the packet is an ACK and the string matches the string for this loop, add it to the hashmap
-            if(receiveACK.getData()[1] == 4 && receivedACKFrom.equalsIgnoreCase(s)){
+            if((int)receiveACK.getData()[1] == 6 && receivedACKFrom.equalsIgnoreCase(s)){
                 System.out.println("received OACK packet from: " + receiveACK.getAddress().getHostName());
                 //the ACK must have the size of the file/the number of packets in the header info
                 //set file size data,by multiplying the total num of packets w the data packet size
@@ -117,7 +122,9 @@ public class RequestHandler implements Runnable{
                 //key OACK in memory for sliding windows to know abt its data
                 retainingOACKForSlidingWindowsData.put(s, receiveACK);
             }
-            System.out.println("Something wrong happened");
+           else{
+                System.out.println("Something wrong happened");
+            }
 
 
         }
