@@ -14,11 +14,12 @@ public class ServerSlidingWindows implements Runnable{
     private int totalNumberOfPackets;
     private DatagramSocket transferSocket;
     private int WINDOW_SIZE = 64;
-    private DatagramSocket socket;
+    private DatagramSocket socketToSendOACK;
 
     private String fileName;
-    public ServerSlidingWindows(DatagramPacket receivePacket) throws IOException {
+    public ServerSlidingWindows(DatagramPacket receivePacket, DatagramSocket socketToSendOACK) throws IOException {
         this.packet = receivePacket;
+        this.socketToSendOACK = socketToSendOACK;
         int counter =0;
 
         //get name of file for determinging the size of the datapackets and whatnot
@@ -47,7 +48,7 @@ public class ServerSlidingWindows implements Runnable{
 
         int totalNumPackets = getNumPackets();
 
-        transferSocket.send(new OACKPacket(new DatagramPacket(new byte[1024], 1024, receivePacket.getAddress(), receivePacket.getPort()), 6, WINDOW_SIZE, totalNumPackets).getDatagramPacket());
+        socketToSendOACK.send(new OACKPacket(new DatagramPacket(new byte[1024], 1024, receivePacket.getAddress(), receivePacket.getPort()), 6, WINDOW_SIZE, totalNumPackets).getDatagramPacket());
 
 
 
@@ -107,9 +108,9 @@ public class ServerSlidingWindows implements Runnable{
                         tempPacket = imagePackets.remove();
                         byte[] temp =  tempPacket.getData();
                         //send packet
-                        socket.send(tempPacket);
+                        transferSocket.send(tempPacket);
                         //set time out
-                        socket.setSoTimeout(100);
+                        transferSocket.setSoTimeout(100);
                         //increment the number of acks to receive
                         toACK++;
                     }
@@ -124,11 +125,11 @@ public class ServerSlidingWindows implements Runnable{
                 try{
                     byte[] ack = new byte[5];
                     DatagramPacket ACK = new DatagramPacket(ack, ack.length);
-                    socket.receive(ACK);
+                    transferSocket.receive(ACK);
                     byte[] holder = ACK.getData();
                     //added code everything else worked before
 
-                    socket.setSoTimeout(5000);
+                    transferSocket.setSoTimeout(5000);
                     receivedAcks[((holder[3] << 8) | (holder[2] & 0xFF))] = 1;
                     count++;
                 }catch(SocketTimeoutException to){
@@ -136,7 +137,7 @@ public class ServerSlidingWindows implements Runnable{
                 }
                 if(count == totalNumberOfPackets) {
                     //allow socket to listen forever as it is being reset
-                    socket.setSoTimeout(0);
+                    transferSocket.setSoTimeout(0);
                     break;
                 }
             }
@@ -159,7 +160,7 @@ public class ServerSlidingWindows implements Runnable{
         Queue<DatagramPacket> packetsToSend = new LinkedList<>();
         //grab current file
 
-        File fileToSend = new File(this.fileName);
+        File fileToSend = new File(this.fileName + ".jpeg");
         System.out.println("size of file: " + fileToSend.length());
         //get number of packets
         int totalPackets = (int)Math.ceil(fileToSend.length()/(double)512);
@@ -167,13 +168,13 @@ public class ServerSlidingWindows implements Runnable{
         //set total number of packets
         this.totalNumberOfPackets = totalPackets;
 
-        int counter =0;
-        while(packet.getData()[counter] != -1){
-            counter++;
-        }
-
-        int PORT_TO_USE = ((packet.getData()[counter +2] << 8) | (packet.getData()[counter +1] & 0xFF));
-        this.socket = new DatagramSocket(PORT_TO_USE);
+//        int counter =0;
+//        while(packet.getData()[counter] != -1){
+//            counter++;
+//        }
+//
+//        int PORT_TO_USE = ((packet.getData()[counter +2] << 8) | (packet.getData()[counter +1] & 0xFF));
+//        this.socket = new DatagramSocket(PORT_TO_USE);
 
 
         InputStream dis = new FileInputStream(fileToSend);
@@ -191,7 +192,7 @@ public class ServerSlidingWindows implements Runnable{
 
 
                 System.out.println("remaining data length: " + remainingDataByte.length);
-                DatagramPacket lastPacket = new DatagramPacket(remainingDataByte, remainingDataByte.length ,packet.getAddress(), PORT_TO_USE);
+                DatagramPacket lastPacket = new DatagramPacket(remainingDataByte, remainingDataByte.length ,packet.getAddress(), port);
                 DATAPacket dataPacket = new DATAPacket(lastPacket, 3, packetsToSend.size());
                 DatagramPacket lastDataPacket = dataPacket.getDatagramPacket();
                 packetsToSend.add(lastDataPacket);
@@ -203,7 +204,7 @@ public class ServerSlidingWindows implements Runnable{
 
 
             //make temp datagram
-            DatagramPacket datagram = new DatagramPacket(temp, temp.length, packet.getAddress(), PORT_TO_USE);
+            DatagramPacket datagram = new DatagramPacket(temp, temp.length, packet.getAddress(), port);
             //get block number(length of array list holding all packets)
             int blockNum = packetsToSend.size();
             //instantiate new datapacket object, w/ current block number

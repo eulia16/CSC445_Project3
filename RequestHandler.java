@@ -8,6 +8,7 @@ public class RequestHandler implements Runnable{
    private int portToUse;
    private DatagramSocket socket;
    RRQPacket readRequestPacketToServer;
+   private DatagramSocket socketToSendOACK;
 
    HashMap<String, byte[]> redundantDataFromServers = new HashMap<>();
    HashMap<String, DatagramPacket> retainingOACKForSlidingWindowsData = new HashMap<>();
@@ -15,8 +16,9 @@ public class RequestHandler implements Runnable{
    HashMap<String, Long> lastReceivedPacketFrom = new HashMap<String, Long>();
    String[] allowedServersToConnectTo = {"pi.cs.oswego.edu", "moxie.cs.oswego.edu"};//,"wolf.cs.oswego.edu", "lambda.cs.oswego.edu"};
 
-    public RequestHandler(DatagramPacket request, int portToUse) throws SocketException, UnknownHostException {
+    public RequestHandler(DatagramPacket request, DatagramSocket socketToSendOACK, int portToUse) throws SocketException, UnknownHostException {
         this.request = request;
+        this.socketToSendOACK = socketToSendOACK;
         this.portToUse = portToUse;
         System.out.println("A new request has been made");
         //attempt to establish a connection with each server, alert if one is unable to be connected to
@@ -45,7 +47,7 @@ public class RequestHandler implements Runnable{
         System.out.println("A request has been made, new request handler instantiated");
         try {
             sendRequestsToAllServers();
-            //beginRoundRobinDataTransmission();
+            beginRoundRobinDataTransmission();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -71,7 +73,7 @@ public class RequestHandler implements Runnable{
             System.out.println("URL path: " + new String(urlBytes));
 
             //call a new sliding windows
-            new SlidingWindows(retainingOACKForSlidingWindowsData.get(s), socket, new String(urlBytes)).run();
+            new SlidingWindows(retainingOACKForSlidingWindowsData.get(s), socket, socketToSendOACK,new String(urlBytes)).run();
         }
 
 
@@ -98,14 +100,14 @@ public class RequestHandler implements Runnable{
             request.setAddress(InetAddress.getByName(s));
 
             //send the request
-            socket.send(request);
+            socketToSendOACK.send(request);
             System.out.println("sent request");
             //if not received in 1 second, server will not be considered for data transmission
-            socket.setSoTimeout(3000);
+            socketToSendOACK.setSoTimeout(3000);
             //receive the ack
             DatagramPacket receiveACK = new DatagramPacket(new byte[1024], 1024);
             System.out.println("Awaiting OACK packet");
-            socket.receive(receiveACK);
+            socketToSendOACK.receive(receiveACK);
             //get the address of the server that sent an ACK
             String receivedACKFrom = new String(receiveACK.getAddress().getHostName());
             System.out.println("received packet from: " + receivedACKFrom + ", length: " + receivedACKFrom.length());

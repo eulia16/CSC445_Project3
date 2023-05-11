@@ -24,7 +24,7 @@ public FileTransmitterServer() throws IOException {
         socket.receive(receivePacket);
         System.out.println("received a packet from the proxy server: " + receivePacket.getAddress().getHostName());
         System.out.println("port:" + PORT);
-        new ServerSlidingWindows(receivePacket).run();
+        new ServerSlidingWindows(receivePacket, socket).run();
 //        OACKPacket packet = new OACKPacket(new DatagramPacket(new byte[1024], 1024, receivePacket.getAddress(), receivePacket.getPort()), 4, 64, 387);
 //        System.out.println("created OACK packet, sending now");
 //        DatagramPacket holder = packet.getDatagramPacket();

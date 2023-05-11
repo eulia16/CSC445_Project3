@@ -90,7 +90,7 @@ public class ProxyServer {
                 //socket.send(new ERRORPacket());
                 System.out.println("no ports available");
             }
-            new RequestHandler(receivePacket, portInUse).run();
+            new RequestHandler(receivePacket,socket , portInUse).run();
 
 
         }

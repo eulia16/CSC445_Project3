@@ -16,14 +16,16 @@ public class SlidingWindows implements  Runnable{
     private int TOTAL_NUM_PACKETS;
     private int WINDOW_SIZE;
     private String fileName;
-
-    public SlidingWindows(DatagramPacket packetFromServer, DatagramSocket socket, String fileName){
+    private DatagramSocket socketToSendOACK;
+    public SlidingWindows(DatagramPacket packetFromServer, DatagramSocket socket, DatagramSocket socketToSendOACK, String fileName){
 
         this.packetFromServer = packetFromServer;
         this.socket = socket;
+        this.socketToSendOACK = socketToSendOACK;
         this.fileName = fileName;
         //get the number of packets
         this.TOTAL_NUM_PACKETS = ((packetFromServer.getData()[8]) << 8 | (packetFromServer.getData()[7] & 0xFF));
+        System.out.print("total num of packets: " + TOTAL_NUM_PACKETS);
         //get the window size
         this.WINDOW_SIZE = ((packetFromServer.getData()[5]) << 8 | (packetFromServer.getData()[4] & 0xFF));
     }
@@ -67,6 +69,7 @@ public class SlidingWindows implements  Runnable{
                 try{
                     if(count < TOTAL_NUM_PACKETS ) {
                         socket.receive(receiveDatagram);
+                        System.out.println("received packet, block number: " + (int) ((receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF)));
                         receiveBuffer = receiveDatagram.getData();
 
 
