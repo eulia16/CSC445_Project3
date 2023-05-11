@@ -20,7 +20,7 @@ public class TestFile extends JFrame {
         String[] columnNames = {"Name", "Progress", "Delete"};
 
         Object[][] data = {
-                {"Example 1", 0, "Delete"},
+                  //{"Example 1", 37, "Delete"},
 //                {"Example 2", 25, "Delete"},
 //                {"Example 3", 75, "Delete"}
         };
@@ -113,9 +113,8 @@ public class TestFile extends JFrame {
         protected void fireEditingStopped() {
             super.fireEditingStopped();
             ((DefaultTableModel)table.getModel()).removeRow(rowSelectedToDelete);
-            System.out.println("the delete button was pressed");
             this.val.remove(rowSelectedToDelete);
-            shiftValuesByOne(this.val);
+              //shiftValuesByOne(this.val);
         }
 
         public void setIntArray(ArrayList<Integer> values){
@@ -123,8 +122,16 @@ public class TestFile extends JFrame {
         }
         public void shiftValuesByOne(ArrayList<Integer> values){
             System.out.println("inside shift by one");
+            for(int i: values){
+                System.out.println("values before shift: " + values.get(i));
+            }
+
             for(Integer i : values){
+                //changed from values.set(i, values.get(i) -1);
                 values.set(i, values.get(i) - 1);
+            }
+            for(int i: values){
+                System.out.println("values afters shift: " + values.get(i));
             }
         }
     }

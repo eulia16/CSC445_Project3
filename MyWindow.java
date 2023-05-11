@@ -3,10 +3,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
@@ -46,8 +43,11 @@ public class MyWindow extends JFrame {
 
     private int currentDownloadIndex=0;
 
+    private HashMap<String, byte[]> globalStorageOfFiles = new HashMap<>();
+
     private int MAX_NUM_THREADS = 15;
 
+    //Doug Lea in decimal ASCII equivalent
     private static final String SECRET_KEY = "681111171037610197";
     private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
 
@@ -56,6 +56,8 @@ public class MyWindow extends JFrame {
     private InetAddress address = InetAddress.getByName(proxyString);
 
     private int currentRowSelected;
+
+    private JList fileHolders;
 
     private ArrayList<Integer> keepTrackOfRowCountForConcurrency = new ArrayList<Integer>();
 
@@ -141,8 +143,9 @@ public class MyWindow extends JFrame {
 
                     //we will use a swing worker to handle each time the button is pressed, to break off a new
                     //swing worker thread, and begin the sliding windows download
-                    currentDownloadIndex++;
-                    keepTrackOfRowCountForConcurrency.add(currentDownloadIndex, table.getRowCount()-1);
+                       //currentDownloadIndex++;
+                    int i = table.getRowCount() ;
+                    keepTrackOfRowCountForConcurrency.add(currentDownloadIndex, table.getRowCount() -1);
                     doTheSwingThing(keepTrackOfRowCountForConcurrency.get(currentDownloadIndex));
 
 
@@ -184,21 +187,25 @@ public class MyWindow extends JFrame {
         this.table = testFile.getTable();
         add(this.table, gbc);
 
-        keepTrackOfRowCountForConcurrency.add(0, table.getRowCount()-1);
+        //keepTrackOfRowCountForConcurrency.add(0, table.getRowCount()-1);
 
         //temp for now
-        JList fileHolders;
+
         String week[]= { "Monday","Tuesday","Wednesday",
                 "Thursday","Friday","Saturday","Sunday"};
         fileHolders= new JList(week);
         fileHolders.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting()){
-                    JList source = (JList)e.getSource();
-                    currentSelectedFile = source.getSelectedValue().toString();
-                    currentRowSelected = source.getSelectedIndex();
-                }
+
+                    if (!e.getValueIsAdjusting()) {
+                        JList source = (JList) e.getSource();
+                        if(source.getSelectedValue() == null)
+                            return;
+                        currentSelectedFile = source.getSelectedValue().toString();
+                        currentRowSelected = source.getSelectedIndex();
+                    }
+
             }
         });
 
@@ -240,6 +247,8 @@ public class MyWindow extends JFrame {
                 System.out.println("Original value: " + testString);
                 System.out.println("Encrypted value: " + encryptedval);
                 System.out.println("Decrypted value: " + decryptedval);
+                uploadFileButton.setEnabled(true);
+
 
             }
         });
@@ -276,6 +285,7 @@ public class MyWindow extends JFrame {
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(10, 10, 10, 10);
+        uploadFileButton.setEnabled(false);
         add(uploadFileButton, gbc);
 
     }
@@ -342,58 +352,85 @@ public class MyWindow extends JFrame {
         return worker;
     }
 
-    public String[] sendFRRQToGetPackets(){
-        //try {
-//                    //create the request file packet
-//                    FRRQ fileReadRequestPacket = new FRRQ(new DatagramPacket(new byte[5], 5, address, PORT), 8);
-//                    //send it
-//                    proxyServerConnectedTo.send(fileReadRequestPacket.getFRRQPacket());
-//                    //we will then enter an infinite for loop, with a timeout, to listen for the packet back
-//                    DatagramPacket receiveFiles = new DatagramPacket(new byte[2048], 2048);
-//                    for(;;){
-//                        proxyServerConnectedTo.receive(receiveFiles);
-//                        proxyServerConnectedTo.setSoTimeout(3000);
-//                        //if the packet has actually been received, the opcode will not be 0 and we can break out of
-//                        //the loop
-//                        if(receiveFiles.getData()[1] != 0)
-//                            break;
-//                    }
+    public String[] sendFRRQToGetPackets() {
+        ArrayList<String> fileFromServer = new ArrayList<>();
+        try {
+            //create the request file packet
+            FRRQ fileReadRequestPacket = new FRRQ(new DatagramPacket(new byte[5], 5, address, PORT), 8);
+            //send it
+            proxyServerConnectedTo.send(fileReadRequestPacket.getFRRQPacket());
+
+            //we will then enter an infinite for loop, with a timeout, to listen for the packet back
+            DatagramPacket receiveFiles = new DatagramPacket(new byte[3000], 3000);
+            proxyServerConnectedTo.receive(receiveFiles);
+            System.out.println("received files");
+
+//            for (; ; ) {
+//                proxyServerConnectedTo.receive(receiveFiles);
+//                proxyServerConnectedTo.setSoTimeout(3000);
+//                //if the packet has actually been received, the opcode will not be 0 and we can break out of
+//                //the loop
+//                if (receiveFiles.getData()[1] != 0)
+//                    break;
+//            }
             //we will then capture the data from the datagram packet and turn that into a list, to then populate
             //the list of files available to download from the server
             //if data packet
-//                    if(receiveFiles.getData()[1] == 3){
-//                        //while there the value is not -1, which will tell the client there are no more files to list
-//                       ArrayList<String> fileFromServer = new ArrayList<>();
-//                        int i=0;
-//                        while(receiveFiles.getData()[i] != -1) {
-//                            String temp = "";
-//                            for (;;) {
-//                                if(receiveFiles.getData()[i] == 0)
-//                                    break;
-//                                else
-//                                    temp += (char)receiveFiles.getData()[i] ;
-//                            }
-//                            fileFromServer.add(temp);
-//                        }
-            //String week[]= { "Fuck","This","Shit"};
-            //fileHolders.setListData(week);
-//                    }
-//
-//                    else{
-//                        JOptionPane.showMessageDialog(null, "There was an error retrieving the available files from the proxy server");
-//                    }
-//
-//                } catch (UnknownHostException ex) {
-//                    JOptionPane.showMessageDialog(null, "There was an error connecting to the proxy server");
-//                    throw new RuntimeException(ex);
-//                } catch (IOException ex) {
-//                    throw new RuntimeException(ex);
-//                }
-//                //table.add(the files available);
-        return new String[]{"monday", "Tuesday", "Wednesday"};
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[1]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[2]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[3]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[4]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[5]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[6]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[7]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[8]);
+            System.out.println("recievedFiles.getData(): " + receiveFiles.getData()[9]);
+                //while there the value is not -1, which will tell the client there are no more files to list
+
+                int i = 5;
+                while (receiveFiles.getData()[i] != -1) {
+                    String temp = "";
+                    for (; ; ) {
+                        if (receiveFiles.getData()[i] == 0) {
+                            //System.out.println("equalled zero, new string");
+                            break;
+                        }
+                        else {
+                            temp += (char) receiveFiles.getData()[i];
+                            //System.out.println("added: " + (char) receiveFiles.getData()[i] + ", to string");
+                        }
+                            
+
+                        i++;
+                        //System.out.println("looped");
+                    }
+                    fileFromServer.add(temp);
+                    i++;
+                }
+                String week[] = {"Fuck", "This", "Shit"};
+                fileHolders.setListData(fileFromServer.toArray());
+
+
+        } catch (UnknownHostException ex) {
+            JOptionPane.showMessageDialog(null, "There was an error connecting to the proxy server");
+            throw new RuntimeException(ex);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        //table.add(the files available);
+        //return new String[]{"monday", "Tuesday", "Wednesday"};
+
+        String[] listOFiles = new String[fileFromServer.toArray().length];
+        int counter=0;
+        for(Object o: fileFromServer.toArray()){
+            listOFiles[counter] = (String) o;
+            counter++;
+        }
+
+        return listOFiles;
     }
 
-    //method to perform the sliding windows operation for downloading and uploading files
+        //method to perform the sliding windows operation for downloading and uploading files
     public byte[] slidingWindows(){
         byte[] bytes = new byte[1];
         return bytes;
@@ -448,7 +485,7 @@ public class MyWindow extends JFrame {
             SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-            /* Retruns decrypted value. */
+            /* Reruns decrypted value. */
             return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
         }
         catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
