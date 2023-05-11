@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 //this will be the main driver class for the client side code,
-//in the case of this project the client will also serve as the distributer of
+//in the case of this project the client will also serve as the distributor of
 //files as far as the interface goes, being able tp upload assignments on the left side of the
 //interface, and download files on the right side of the interface, for rn ill design the interface
 //to allow for easier interaction between attempting to upload and download files to and from the
