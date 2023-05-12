@@ -270,6 +270,7 @@ public class MyWindow extends JFrame {
                 String s = new String(testString);
                 String encryptedval = encrypt(s);
                 /* Call the decrypt() method and store result of decryption. */
+                System.out.println("bytes of decrypted bytes: " + decrypt(encryptedval));
                 String decryptedval = decrypt(encryptedval);
 
                 System.out.println("Original value: " + testString);
@@ -478,7 +479,7 @@ public class MyWindow extends JFrame {
         byte[] buffer = new byte[1024];
         int bytesRead = 0;
         while ((bytesRead = inputStream.read(buffer)) != -1) {
-            fileOutputStream.write(buffer, 0, bytesRead);
+            fileOutputStream.write(decrypt(new String(buffer)).getBytes(), 0, bytesRead);
         }
 
         // Close the streams and socket

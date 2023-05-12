@@ -1,6 +1,17 @@
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -11,6 +22,10 @@ public class SlidingWindows implements  Runnable{
     private int WINDOW_SIZE;
     private String fileName;
     private DatagramSocket socketToSendOACK;
+
+    private static final String SECRET_KEY = "681111171037610197";
+    private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
+
     public SlidingWindows(DatagramPacket packetFromServer, DatagramSocket socket, DatagramSocket socketToSendOACK, String fileName){
 
         this.packetFromServer = packetFromServer;
@@ -93,16 +108,17 @@ public class SlidingWindows implements  Runnable{
 
                         //ensure you received the next ack you expected
                         //System.out.println("Next Ack Expected: " + nextAckToReceive + ", next ack actually received: " + (int) ((receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF)));
-                        if(nextAckToReceive == (int) ((receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF))) {
+                        byte[] decrypted = decrypt(new String(receiveBuffer)).getBytes(StandardCharsets.UTF_8);
+                        if(nextAckToReceive == (int) ((decrypted[3] << 8) | (decrypted[2] & 0xFF))) {
 
                             socket.setSoTimeout(100);
                             count++;
-                            packetNumbersReceived[(int) (receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF)] = 1;
-                            toAck.add((int) (receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF));
+                            packetNumbersReceived[(int) (decrypted[3] << 8) | (decrypted[2] & 0xFF)] = 1;
+                            toAck.add((int) (decrypted[3] << 8) | (decrypted[2] & 0xFF));
                             nextAckToReceive++;
 
 
-                            System.arraycopy(receiveBuffer, 4, pictureData, 512 * (int) ((receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF)), 512);
+                            System.arraycopy(decrypted, 4, pictureData, 512 * (int) ((decrypted[3] << 8) | (decrypted[2] & 0xFF)), 512);
                         }
                         else{
                             //slide window back if not receiving next expected packet
@@ -176,5 +192,66 @@ public class SlidingWindows implements  Runnable{
         //socket.close();
 
     }
+
+
+    public static String encrypt(String strToEncrypt) {
+        try {
+            /* Declare a byte array. */
+            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
+            /* Create factory for secret keys. */
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            /* PBEKeySpec class implements KeySpec interface. */
+            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
+            // Reruns encrypted value
+            return Base64.getEncoder()
+                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /* Decryption Method */
+    public static String decrypt(String strToDecrypt)
+    {
+        try
+        {
+            /* Declare a byte array. */
+            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
+            /* Create factory for secret keys. */
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            /* PBEKeySpec class implements KeySpec interface. */
+            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
+            /* Reruns decrypted value. */
+            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+        }
+        catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
+        {
+            System.out.println("Error occured during decryption: " + e.toString());
+        }
+        return null;
+    }
+
 
 }
