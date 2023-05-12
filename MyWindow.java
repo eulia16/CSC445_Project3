@@ -264,6 +264,11 @@ public class MyWindow extends JFrame {
                 String[] allCurrentFiles = sendFRRQToGetPackets();
                 fileHolders.setListData(allCurrentFiles);
 
+                try {
+                    getKeyFromPassword(password,SALTVALUE);
+                } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+                    throw new RuntimeException(ex);
+                }
                 String blep = "HOLOAAAAAAAAAAAA";
                 byte[] testString = blep.getBytes();
                 String s = new String(testString);
@@ -503,31 +508,33 @@ public class MyWindow extends JFrame {
     }
 
     /* Encryption Method */
-    public static byte[] encrypt(SecretKey key, byte[] content) {
+    public static byte[] encrypt(Key key, byte[] content) {
         Cipher cipher;
         byte[] encrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             encrypted = cipher.doFinal(content);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
                  BadPaddingException e) {
             e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
         return encrypted;
     }
 
     /* Decryption Method */
-    public static byte[] decrypt(SecretKey key, byte[] textCrypt)
+    public static byte[] decrypt(Key key, byte[] textCrypt)
     {
         Cipher cipher;
         byte[] decrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             decrypted = cipher.doFinal(textCrypt);
         } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
-                 InvalidKeyException e) {
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
         return decrypted;

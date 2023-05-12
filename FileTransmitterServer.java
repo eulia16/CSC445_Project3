@@ -9,10 +9,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
@@ -71,45 +68,15 @@ private static SecretKey getKeyFromPassword(String password, String salt) throws
         byte[] encrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             encrypted = cipher.doFinal(content);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
                  BadPaddingException e) {
             e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
         return encrypted;
-
-//        try {
-//            /* Declare a byte array. */
-//            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-//            IvParameterSpec ivspec = new IvParameterSpec(iv);
-//            /* Create factory for secret keys. */
-//            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-//            /* PBEKeySpec class implements KeySpec interface. */
-//            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-//            SecretKey tmp = factory.generateSecret(spec);
-//            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-//            /* Create cipher instance. */
-//            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-//            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-//            // Reruns encrypted value
-//            return Base64.getEncoder()
-//                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
-//        } catch (InvalidAlgorithmParameterException e) {
-//            throw new RuntimeException(e);
-//        } catch (NoSuchPaddingException e) {
-//            throw new RuntimeException(e);
-//        } catch (IllegalBlockSizeException e) {
-//            throw new RuntimeException(e);
-//        } catch (NoSuchAlgorithmException e) {
-//            throw new RuntimeException(e);
-//        } catch (InvalidKeySpecException e) {
-//            throw new RuntimeException(e);
-//        } catch (BadPaddingException e) {
-//            throw new RuntimeException(e);
-//        } catch (InvalidKeyException e) {
-//            throw new RuntimeException(e);
-//        }
     }
 
     /* Decryption Method */
@@ -119,41 +86,12 @@ private static SecretKey getKeyFromPassword(String password, String salt) throws
         byte[] decrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             decrypted = cipher.doFinal(textCrypt);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
+        } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
         return decrypted;
-//        try
-//        {
-//            /* Declare a byte array. */
-//            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-//            IvParameterSpec ivspec = new IvParameterSpec(iv);
-//            /* Create factory for secret keys. */
-//            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-//            /* PBEKeySpec class implements KeySpec interface. */
-//            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-//            SecretKey tmp = factory.generateSecret(spec);
-//            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-//            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-//            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-//            /* Reruns decrypted value. */
-//            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
-//        }
-//        catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
-//        {
-//            System.out.println("Error occured during decryption: " + e.toString());
-//        }
-//        return null;
     }
-
 }

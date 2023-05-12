@@ -6,10 +6,7 @@ import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -275,17 +272,18 @@ public class ServerSlidingWindows implements Runnable{
         SECRET_KEY = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
     }
 
-/* Encryption Method */
     public static byte[] encrypt(Key key, byte[] content) {
         Cipher cipher;
         byte[] encrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             encrypted = cipher.doFinal(content);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
                  BadPaddingException e) {
             e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
         return encrypted;
     }
@@ -297,23 +295,12 @@ public class ServerSlidingWindows implements Runnable{
         byte[] decrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             decrypted = cipher.doFinal(textCrypt);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
+        } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
         return decrypted;
     }
-
-
-
-
 }

@@ -1,11 +1,10 @@
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.*;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.LinkedList;
@@ -198,11 +197,13 @@ public class SlidingWindows implements  Runnable{
         byte[] encrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             encrypted = cipher.doFinal(content);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
                  BadPaddingException e) {
             e.printStackTrace();
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
         return encrypted;
     }
@@ -214,10 +215,10 @@ public class SlidingWindows implements  Runnable{
         byte[] decrypted = null;
         try {
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
             decrypted = cipher.doFinal(textCrypt);
         } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
-                 InvalidKeyException e) {
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
         return decrypted;
