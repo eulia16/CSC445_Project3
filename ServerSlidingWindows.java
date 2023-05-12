@@ -1,8 +1,5 @@
 import javax.xml.crypto.Data;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.*;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -85,7 +82,7 @@ public class ServerSlidingWindows implements Runnable{
 
     //all functionality of sliding windows will occur in this method
     public void slidingWindows() throws IOException {
-        //call method to have datapackets of the image loaded into a list/structure of datapackets
+//        //call method to have datapackets of the image loaded into a list/structure of datapackets
         Queue<DatagramPacket> imagePackets = getImageTFTPPackets();
         //now that we have the number of packets necessary to send to the client in the sliding windows
         //protocol
@@ -142,6 +139,35 @@ public class ServerSlidingWindows implements Runnable{
                 }
             }
         }
+
+//        ServerSocket serverSocket = new ServerSocket(8000);
+//
+//        // Wait for a client to connect
+//        System.out.println("Waiting for connection...");
+//        Socket clientSocket = serverSocket.accept();
+//        System.out.println("Connection established!");
+//
+//        // Open the file to be transferred
+//        File file = new File(fileName+ ".jpeg");
+//        FileInputStream fileInputStream = new FileInputStream(file);
+//
+//        // Get the output stream of the client socket
+//        OutputStream outputStream = clientSocket.getOutputStream();
+//
+//        // Transfer the file contents to the client
+//        byte[] buffer = new byte[1024];
+//        int bytesRead = 0;
+//        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+//            outputStream.write(buffer, 0, bytesRead);
+//        }
+//        outputStream.flush();
+//
+//        // Close the streams and sockets
+//        fileInputStream.close();
+//        outputStream.close();
+//        clientSocket.close();
+//        serverSocket.close();
+//        System.out.println("File transfer complete!");
         //end time
        System.out.println("finished Sliding windows");
         //just print it to the screen I'll add the values to a graph

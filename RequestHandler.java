@@ -56,6 +56,8 @@ public class RequestHandler implements Runnable{
     }
 
     public void beginRoundRobinDataTransmission(){
+
+
         //for each
         for(String s : redundantDataFromServers.keySet()){
             int currentIndex=2, URLBytesIndex=0;
@@ -73,7 +75,7 @@ public class RequestHandler implements Runnable{
             System.out.println("URL path: " + new String(urlBytes));
 
             //call a new sliding windows
-            new SlidingWindows(retainingOACKForSlidingWindowsData.get(s), socket, socketToSendOACK,new String(urlBytes)).run();
+            new SlidingWindows(retainingOACKForSlidingWindowsData.get(s), socket, socketToSendOACK, new String(urlBytes)).run();
         }
 
 

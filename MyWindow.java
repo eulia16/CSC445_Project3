@@ -147,6 +147,28 @@ public class MyWindow extends JFrame {
                     int i = table.getRowCount() ;
                     keepTrackOfRowCountForConcurrency.add(currentDownloadIndex, table.getRowCount() -1);
                     doTheSwingThing(keepTrackOfRowCountForConcurrency.get(currentDownloadIndex));
+                    System.out.println("Inside sliding windows");
+
+//        Socket tcpSocketToServer = new Socket(packetFromServer.getAddress(), socketToSendOACK.getPort());
+//
+//        File tempFile = new File("downloaded"+ fileName + ".jpeg");
+//
+//        FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+//        // Get the input stream of the server socket
+//        InputStream inputStream = tcpSocketToServer.getInputStream();
+//
+//        // Transfer the file contents from the server
+//        byte[] buffer = new byte[1024];
+//        int bytesRead = 0;
+//        while ((bytesRead = inputStream.read(buffer)) != -1) {
+//            fileOutputStream.write(buffer, 0, bytesRead);
+//        }
+//
+//        // Close the streams and socket
+//        fileOutputStream.close();
+//        inputStream.close();
+//        tcpSocketToServer.close();
+//        System.out.println("File transfer complete!");
 
 
                 } catch (UnknownHostException ex) {

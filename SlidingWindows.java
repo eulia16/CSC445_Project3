@@ -1,12 +1,6 @@
 import javax.xml.crypto.Data;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketTimeoutException;
+import java.io.*;
+import java.net.*;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -55,9 +49,32 @@ public class SlidingWindows implements  Runnable{
         int[] packetNumbersReceived = new int[TOTAL_NUM_PACKETS];
         Queue<Integer> toAck = new LinkedList<>();
         int nextAckToReceive =0;
-        System.out.println("Inside sliding windows");
+//        System.out.println("Inside sliding windows");
+//        Socket tcpSocketToServer = new Socket(packetFromServer.getAddress(), socketToSendOACK.getPort());
+//
+//        File tempFile = new File("downloaded"+ fileName + ".jpeg");
+//
+//        FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+//        // Get the input stream of the server socket
+//        InputStream inputStream = tcpSocketToServer.getInputStream();
+//
+//        // Transfer the file contents from the server
+//        byte[] buffer = new byte[1024];
+//        int bytesRead = 0;
+//        while ((bytesRead = inputStream.read(buffer)) != -1) {
+//            fileOutputStream.write(buffer, 0, bytesRead);
+//        }
+//
+//        // Close the streams and socket
+//        fileOutputStream.close();
+//        inputStream.close();
+//        tcpSocketToServer.close();
+//        System.out.println("File transfer complete!");
 
-        //continue to receive data and send acks for however many packets there are
+
+
+//
+//        //continue to receive data and send acks for however many packets there are
         while( count < TOTAL_NUM_PACKETS - 1){
             //receive the datagram
             byte[] receiveBuffer = new byte[516];
@@ -70,6 +87,7 @@ public class SlidingWindows implements  Runnable{
                     if(count < TOTAL_NUM_PACKETS ) {
                         socket.receive(receiveDatagram);
                         System.out.println("received packet, block number: " + (int) ((receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF)));
+                        System.out.println("address recieved packet from: " + receiveDatagram.getAddress().getHostAddress());
                         receiveBuffer = receiveDatagram.getData();
 
 
@@ -114,14 +132,46 @@ public class SlidingWindows implements  Runnable{
                 socket.send(ack.getDatagramPacket());
             }
 
+
+
         }
 
 
         //persist a new file with the name of the server it was downloaded from, as well as the name of the file
-        File file = new File(packetFromServer.getAddress().getHostName() + fileName + ".jpeg");
+        File file = new File("new Download"+ fileName + ".jpeg");
         BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
         bos.write(pictureData);
         bos.close();
+
+        ServerSocket  connectionWithClient = new ServerSocket(30000);
+
+        // Wait for a client to connect
+//        System.out.println("Waiting for connection...");
+//        Socket clientSocket = serverSocket.accept();
+//        System.out.println("Connection established!");
+//
+//        // Open the file to be transferred
+//        File file = new File("new Download"+ fileName + ".jpeg");
+//        FileInputStream fileInputStream = new FileInputStream(file);
+//
+//        // Get the output stream of the client socket
+//        OutputStream outputStream = clientSocket.getOutputStream();
+//
+//        // Transfer the file contents to the client
+//        byte[] buffer = new byte[1024];
+//        int bytesRead = 0;
+//        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+//            outputStream.write(buffer, 0, bytesRead);
+//        }
+//        outputStream.flush();
+//
+//        // Close the streams and sockets
+//        fileInputStream.close();
+//        outputStream.close();
+//        clientSocket.close();
+//        serverSocket.close();
+//        System.out.println("File transfer complete!");
+
 
         socket.close();
 
