@@ -140,34 +140,34 @@ public class ServerSlidingWindows implements Runnable{
             }
         }
 
-//        ServerSocket serverSocket = new ServerSocket(8000);
-//
-//        // Wait for a client to connect
-//        System.out.println("Waiting for connection...");
-//        Socket clientSocket = serverSocket.accept();
-//        System.out.println("Connection established!");
-//
-//        // Open the file to be transferred
-//        File file = new File(fileName+ ".jpeg");
-//        FileInputStream fileInputStream = new FileInputStream(file);
-//
-//        // Get the output stream of the client socket
-//        OutputStream outputStream = clientSocket.getOutputStream();
-//
-//        // Transfer the file contents to the client
-//        byte[] buffer = new byte[1024];
-//        int bytesRead = 0;
-//        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-//            outputStream.write(buffer, 0, bytesRead);
-//        }
-//        outputStream.flush();
-//
-//        // Close the streams and sockets
-//        fileInputStream.close();
-//        outputStream.close();
-//        clientSocket.close();
-//        serverSocket.close();
-//        System.out.println("File transfer complete!");
+        ServerSocket serverSocket = new ServerSocket(8000);
+
+        // Wait for a client to connect
+        System.out.println("Waiting for connection...");
+        Socket clientSocket = serverSocket.accept();
+        System.out.println("Connection established!");
+
+        // Open the file to be transferred
+        File file = new File(fileName+ ".jpeg");
+        FileInputStream fileInputStream = new FileInputStream(file);
+
+        // Get the output stream of the client socket
+        OutputStream outputStream = clientSocket.getOutputStream();
+
+        // Transfer the file contents to the client
+        byte[] buffer = new byte[1024];
+        int bytesRead = 0;
+        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
+        }
+        outputStream.flush();
+
+        // Close the streams and sockets
+        fileInputStream.close();
+        outputStream.close();
+        clientSocket.close();
+        serverSocket.close();
+        System.out.println("File transfer complete!");
         //end time
        System.out.println("finished Sliding windows");
         //just print it to the screen I'll add the values to a graph

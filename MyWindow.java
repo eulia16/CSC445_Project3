@@ -147,28 +147,34 @@ public class MyWindow extends JFrame {
                     int i = table.getRowCount() ;
                     keepTrackOfRowCountForConcurrency.add(currentDownloadIndex, table.getRowCount() -1);
                     doTheSwingThing(keepTrackOfRowCountForConcurrency.get(currentDownloadIndex));
-                    System.out.println("Inside sliding windows");
 
-//        Socket tcpSocketToServer = new Socket(packetFromServer.getAddress(), socketToSendOACK.getPort());
-//
-//        File tempFile = new File("downloaded"+ fileName + ".jpeg");
-//
-//        FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
-//        // Get the input stream of the server socket
-//        InputStream inputStream = tcpSocketToServer.getInputStream();
-//
-//        // Transfer the file contents from the server
-//        byte[] buffer = new byte[1024];
-//        int bytesRead = 0;
-//        while ((bytesRead = inputStream.read(buffer)) != -1) {
-//            fileOutputStream.write(buffer, 0, bytesRead);
-//        }
-//
-//        // Close the streams and socket
-//        fileOutputStream.close();
-//        inputStream.close();
-//        tcpSocketToServer.close();
-//        System.out.println("File transfer complete!");
+
+                    System.out.println("Starting tcp socket connection");
+                    Socket tcpSocketToServer = new Socket(InetAddress.getByName("rho.cs.oswego.edu"), 30000);
+                    System.out.println("Establishged connection vie port 8000:");
+
+
+                    File tempFile = new File("downloaded"+ currentSelectedFile + ".jpeg");
+
+                    FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+                    // Get the input stream of the server socket
+                    InputStream inputStream = tcpSocketToServer.getInputStream();
+
+                    // Transfer the file contents from the server
+                    byte[] buffer = new byte[1024];
+                    int bytesRead = 0;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        fileOutputStream.write(buffer, 0, bytesRead);
+                    }
+
+                    // Close the streams and socket
+                    fileOutputStream.close();
+                    inputStream.close();
+                    tcpSocketToServer.close();
+                    System.out.println("File transfer complete!");
+
+
+
 
 
                 } catch (UnknownHostException ex) {
@@ -320,7 +326,10 @@ public class MyWindow extends JFrame {
                 int progress = 0;
                 Random random = new Random();
                 setProgress(0);
+
+
                 while (progress < 100) {
+
 
                     //Sleep for up to one second.
                     try {
@@ -453,9 +462,33 @@ public class MyWindow extends JFrame {
     }
 
         //method to perform the sliding windows operation for downloading and uploading files
-    public byte[] slidingWindows(){
-        byte[] bytes = new byte[1];
-        return bytes;
+    public byte[] slidingWindows() throws IOException {
+        Socket tcpSocketToServer = new Socket(InetAddress.getByName("rho.cs.oswego.edu"), 30000);
+        tcpSocketToServer.setSoTimeout(10000);
+        System.out.println("Establishged connection vie port 8000:");
+
+
+        File tempFile = new File("downloaded"+ currentSelectedFile + ".jpeg");
+
+        FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+        // Get the input stream of the server socket
+        InputStream inputStream = tcpSocketToServer.getInputStream();
+
+        // Transfer the file contents from the server
+        byte[] buffer = new byte[1024];
+        int bytesRead = 0;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            fileOutputStream.write(buffer, 0, bytesRead);
+        }
+
+        // Close the streams and socket
+        fileOutputStream.close();
+        inputStream.close();
+        tcpSocketToServer.close();
+        System.out.println("File transfer complete!");
+
+
+        return new byte[4];
     }
 
     public static String encrypt(String strToEncrypt) {

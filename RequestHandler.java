@@ -1,6 +1,5 @@
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class RequestHandler implements Runnable{
@@ -16,7 +15,7 @@ public class RequestHandler implements Runnable{
    HashMap<String, Long> lastReceivedPacketFrom = new HashMap<String, Long>();
    String[] allowedServersToConnectTo = {"pi.cs.oswego.edu", "moxie.cs.oswego.edu"};//,"wolf.cs.oswego.edu", "lambda.cs.oswego.edu"};
 
-    public RequestHandler(DatagramPacket request, DatagramSocket socketToSendOACK, int portToUse) throws SocketException, UnknownHostException {
+    public RequestHandler(ServerSocket tcpSocket, DatagramPacket request, DatagramSocket socketToSendOACK, int portToUse) throws SocketException, UnknownHostException {
         this.request = request;
         this.socketToSendOACK = socketToSendOACK;
         this.portToUse = portToUse;
@@ -94,6 +93,7 @@ public class RequestHandler implements Runnable{
         request.getData()[counter+2] = (byte)((portToUse >> 8) & 0xFF); // store the upper byte in the second slot
 
         request.getData()[counter+3] = -1;
+
 
 
 //        request.setPort(portToUse);

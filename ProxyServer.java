@@ -28,6 +28,7 @@ public class ProxyServer {
     private String currentRequestedURl = "";
     private final int packetSize = 512;
     private int totalNumberOfPackets =0;
+    private ServerSocket tcpSocket;
 
 
     //constructor, base server assumes false booleans and assumed port 26971
@@ -50,9 +51,15 @@ public class ProxyServer {
 
         //the server will continue to listen for a URL until it received one
 
-            System.out.println("Awaiting URL From Client...");
+            System.out.println("Awaiting URL From Client...(datagram socket)");
             DatagramPacket urlPacket = new DatagramPacket(packetBytes, packetBytes.length);
-            //receive packet
+            System.out.println("Connection with datagram socket created");
+            ServerSocket  connectionWithClient = new ServerSocket(30000);
+
+            this.tcpSocket = connectionWithClient;
+            System.out.println("Connection with tcp socket established");
+
+        //receive packet
             socket.receive(urlPacket);
             //grab data
             packetBytes = urlPacket.getData();
@@ -90,8 +97,7 @@ public class ProxyServer {
                 //socket.send(new ERRORPacket());
                 System.out.println("no ports available");
             }
-            new RequestHandler(receivePacket,socket , portInUse).run();
-
+            new RequestHandler(tcpSocket, receivePacket, socket , portInUse).run();
 
         }
     }
