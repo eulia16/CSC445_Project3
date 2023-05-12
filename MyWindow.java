@@ -277,7 +277,7 @@ public class MyWindow extends JFrame {
                 /* Call the decrypt() method and store result of decryption. */
                 //System.out.println("bytes of decrypted bytes: " + decrypt(encryptedval));
                 byte[] unencryptedString = decrypt(SECRET_KEY, encryptedString);
-                String original = unencryptedString.toString();
+                String original = new String(unencryptedString);
 
                 System.out.println("Original value: " + blep);
                 System.out.println("Encrypted value: " + encryptedString);

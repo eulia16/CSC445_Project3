@@ -40,10 +40,10 @@ public class ServerSlidingWindows implements Runnable{
         }
 
         // Create a new byte array of the desired size
-        byte[] urlBytes = new byte[URLBytesIndex];
+        byte[] urlBytes = new byte[URLBytesIndex+2];
 
         // Copy the relevant bytes into the new byte array
-        System.arraycopy(receivePacket.getData(), 2, urlBytes, 0, URLBytesIndex+1);
+        System.arraycopy(receivePacket.getData(), 2, urlBytes, 0, URLBytesIndex);
         //increment past zero seperator
         currentIndex++;
         System.out.println("URL path: " + new String(urlBytes));
@@ -85,7 +85,7 @@ public class ServerSlidingWindows implements Runnable{
 //initialize sliding windows
         try {
             slidingWindows();
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
     }
@@ -94,7 +94,7 @@ public class ServerSlidingWindows implements Runnable{
 
 
     //all functionality of sliding windows will occur in this method
-    public void slidingWindows() throws IOException, NoSuchAlgorithmException {
+    public void slidingWindows() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 //        //call method to have datapackets of the image loaded into a list/structure of datapackets
         Queue<DatagramPacket> imagePackets = getImageTFTPPackets();
         //now that we have the number of packets necessary to send to the client in the sliding windows
@@ -194,7 +194,7 @@ public class ServerSlidingWindows implements Runnable{
     //it should be changed to bytes but im not sure, i maybe able to edit this method
     //so the header info for a data packet is already appended onto the front by instantiating
     //a datapacket object every time, wait to see if this is a good way to to do that
-    public Queue<DatagramPacket> getImageTFTPPackets() throws IOException, NoSuchAlgorithmException {
+    public Queue<DatagramPacket> getImageTFTPPackets() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         //we must determine how many packets
         Queue<DatagramPacket> packetsToSend = new LinkedList<>();
         //grab current file
@@ -222,6 +222,7 @@ public class ServerSlidingWindows implements Runnable{
         byte[] fileInfo = new byte[dis.available()];
         dis.read(fileInfo);
 
+        getKeyFromPassword(password, SALTVALUE);
         fileInfo = encrypt(SECRET_KEY, fileInfo);
 
         //fileInfo = encrypt(new String(fileInfo)).getBytes(StandardCharsets.UTF_8);
@@ -268,7 +269,7 @@ public class ServerSlidingWindows implements Runnable{
 
     private static void getKeyFromPassword(String password, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
         SECRET_KEY = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
     }
 
