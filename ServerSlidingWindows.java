@@ -46,7 +46,7 @@ public class ServerSlidingWindows implements Runnable{
         byte[] urlBytes = new byte[URLBytesIndex];
 
         // Copy the relevant bytes into the new byte array
-        System.arraycopy(receivePacket.getData(), 2, urlBytes, 0, URLBytesIndex);
+        System.arraycopy(receivePacket.getData(), 2, urlBytes, 0, URLBytesIndex+1);
         //increment past zero seperator
         currentIndex++;
         System.out.println("URL path: " + new String(urlBytes));

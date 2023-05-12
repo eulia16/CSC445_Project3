@@ -503,7 +503,7 @@ public class MyWindow extends JFrame {
     }
 
     /* Encryption Method */
-    public static byte[] encrypt(Key key, byte[] content) {
+    public static byte[] encrypt(SecretKey key, byte[] content) {
         Cipher cipher;
         byte[] encrypted = null;
         try {
@@ -518,7 +518,7 @@ public class MyWindow extends JFrame {
     }
 
     /* Decryption Method */
-    public static byte[] decrypt(Key key, byte[] textCrypt)
+    public static byte[] decrypt(SecretKey key, byte[] textCrypt)
     {
         Cipher cipher;
         byte[] decrypted = null;
