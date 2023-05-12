@@ -14,7 +14,6 @@ import java.net.UnknownHostException;
   WRQ    -----------------------------------------------
 
 
-
  */
 public class FRRQ extends TFTPPacket {
     //url to be sent(filename as specified )

@@ -65,7 +65,6 @@ public abstract class TFTPPacket {
 
     private final int OACK = 6;
     private final int ERROR = 5;
-
     private final int ACK = 4;
     private final int DATA = 3;
     private final int WRQ = 2;

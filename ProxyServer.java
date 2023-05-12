@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 
 //this class will serve as the proxy server, waiting for a connection, receiving a URL, and then hitting an
 //http endpoint that lives there
+
 public class ProxyServer {
     private DatagramSocket socket;
     private InetAddress address;
@@ -165,13 +166,10 @@ public class ProxyServer {
         int[] receivedAcks = new int[imagePackets.size()];
         int count=0;
 
-
         //start timer
         long beginTime = System.nanoTime();
-
         while(!imagePackets.isEmpty()){
             toACK=0;
-
 
             //send window size number of datapackets
             for(int i = 0; i<windowSizeHolder; ++i){

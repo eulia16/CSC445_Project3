@@ -8,6 +8,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
@@ -25,7 +26,8 @@ public class ServerSlidingWindows implements Runnable{
     private DatagramSocket socketToSendOACK;
 
     //Doug Lea in decimal ASCII equivalent
-    private static final String SECRET_KEY = "681111171037610197";
+    private static SecretKey SECRET_KEY;
+    private static String password = "DougLea";
     private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
 
     private String fileName;
@@ -80,14 +82,13 @@ public class ServerSlidingWindows implements Runnable{
         }
 
 
-
     @Override
     public void run() {
         System.out.println("Created new thread that will initialize new sliding windows protocol");
 //initialize sliding windows
         try {
             slidingWindows();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
@@ -96,7 +97,7 @@ public class ServerSlidingWindows implements Runnable{
 
 
     //all functionality of sliding windows will occur in this method
-    public void slidingWindows() throws IOException {
+    public void slidingWindows() throws IOException, NoSuchAlgorithmException {
 //        //call method to have datapackets of the image loaded into a list/structure of datapackets
         Queue<DatagramPacket> imagePackets = getImageTFTPPackets();
         //now that we have the number of packets necessary to send to the client in the sliding windows
@@ -196,7 +197,7 @@ public class ServerSlidingWindows implements Runnable{
     //it should be changed to bytes but im not sure, i maybe able to edit this method
     //so the header info for a data packet is already appended onto the front by instantiating
     //a datapacket object every time, wait to see if this is a good way to to do that
-    public Queue<DatagramPacket> getImageTFTPPackets() throws IOException {
+    public Queue<DatagramPacket> getImageTFTPPackets() throws IOException, NoSuchAlgorithmException {
         //we must determine how many packets
         Queue<DatagramPacket> packetsToSend = new LinkedList<>();
         //grab current file
@@ -221,10 +222,14 @@ public class ServerSlidingWindows implements Runnable{
         InputStream dis = new FileInputStream(fileToSend);
         //need to change this so the last packet gets a byte array smaller than 512 length, so the
         //client knows its the last packet
-        byte[] fileInfo = new byte[(int) fileToSend.length()];
+        byte[] fileInfo = new byte[dis.available()];
         dis.read(fileInfo);
-        fileInfo = encrypt(new String(fileInfo)).getBytes(StandardCharsets.UTF_8);
+
+        fileInfo = encrypt(SECRET_KEY, fileInfo);
+
+        //fileInfo = encrypt(new String(fileInfo)).getBytes(StandardCharsets.UTF_8);
         //while((bytesRead = dis.read(buffer)) != -1){
+
         for(int i=0; i<totalPackets; ++i){
             System.out.println("File info length: " + fileInfo.length);
             byte[] temp;
@@ -243,9 +248,6 @@ public class ServerSlidingWindows implements Runnable{
             }
             temp = Arrays.copyOfRange(fileInfo, (i * 512), (i * 512) + 512);
 
-
-
-
             //make temp datagram
             DatagramPacket datagram = new DatagramPacket(temp, temp.length, packet.getAddress(), port);
             //get block number(length of array list holding all packets)
@@ -254,81 +256,61 @@ public class ServerSlidingWindows implements Runnable{
             DATAPacket dataPacket = new DATAPacket(datagram, 3, blockNum);
             //get datagram packet to add to list
             DatagramPacket newDatagram = dataPacket.getDatagramPacket();
-            //for testing putposes we will grab the block number to ensure accuracy
+            //for testing purposes we will grab the block number to ensure accuracy
             byte[] receiveByte;
             receiveByte = newDatagram.getData();
             int newNumber = (receiveByte[3] << 8) | (receiveByte[2] & 0xFF);
             System.out.println("block number from the data in the packet: " + newNumber);
             //add packet to packets to send array list
             packetsToSend.add(newDatagram);
-
         }
-
-
 
         return packetsToSend;
 
     }
 
+    private static void getKeyFromPassword(String password, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
+        SECRET_KEY = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+    }
 
-
-    public static String encrypt(String strToEncrypt) {
+/* Encryption Method */
+    public static byte[] encrypt(Key key, byte[] content) {
+        Cipher cipher;
+        byte[] encrypted = null;
         try {
-            /* Declare a byte array. */
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
-            /* Create factory for secret keys. */
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            /* PBEKeySpec class implements KeySpec interface. */
-            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-            SecretKey tmp = factory.generateSecret(spec);
-            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-            // Reruns encrypted value
-            return Base64.getEncoder()
-                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            encrypted = cipher.doFinal(content);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            e.printStackTrace();
+        }
+        return encrypted;
+    }
+
+    /* Decryption Method */
+    public static byte[] decrypt(Key key, byte[] textCrypt)
+    {
+        Cipher cipher;
+        byte[] decrypted = null;
+        try {
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            decrypted = cipher.doFinal(textCrypt);
         } catch (NoSuchPaddingException e) {
             throw new RuntimeException(e);
         } catch (IllegalBlockSizeException e) {
             throw new RuntimeException(e);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
         } catch (BadPaddingException e) {
             throw new RuntimeException(e);
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /* Decryption Method */
-    public static String decrypt(String strToDecrypt)
-    {
-        try
-        {
-            /* Declare a byte array. */
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
-            /* Create factory for secret keys. */
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            /* PBEKeySpec class implements KeySpec interface. */
-            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-            SecretKey tmp = factory.generateSecret(spec);
-            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-            /* Reruns decrypted value. */
-            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
-        }
-        catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
-        {
-            System.out.println("Error occured during decryption: " + e.toString());
-        }
-        return null;
+        return decrypted;
     }
 
 
