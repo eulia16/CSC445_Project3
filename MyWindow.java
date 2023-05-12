@@ -275,8 +275,8 @@ public class MyWindow extends JFrame {
                 String original = unencryptedString.toString();
 
                 System.out.println("Original value: " + blep);
-                System.out.println("Encrypted value: " + encryptedval);
-                System.out.println("Decrypted value: " + decryptedval);
+                System.out.println("Encrypted value: " + encryptedString);
+                System.out.println("Decrypted value: " + unencryptedString);
                 System.out.println("Unencrypted value: " + original);
 
                 uploadFileButton.setEnabled(true);
@@ -482,7 +482,7 @@ public class MyWindow extends JFrame {
         byte[] buffer = new byte[1024];
         int bytesRead = 0;
         while ((bytesRead = inputStream.read(buffer)) != -1) {
-            fileOutputStream.write(decrypt(new String(buffer)).getBytes(), 0, bytesRead);
+            fileOutputStream.write(decrypt(SECRET_KEY,buffer), 0, bytesRead);
         }
 
         // Close the streams and socket
