@@ -48,50 +48,10 @@ public FileTransmitterServer() throws IOException {
 //
 //
     }
-
-
 }
 
 public static void main(String[] argz) throws IOException {
     new FileTransmitterServer();
 }
 
-private static SecretKey getKeyFromPassword(String password, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
-    SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-    KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
-    SECRET_KEY = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
-    return SECRET_KEY;
-}
-
-    public static byte[] encrypt(Key key, byte[] content) {
-        Cipher cipher;
-        byte[] encrypted = null;
-        try {
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
-            encrypted = cipher.doFinal(content);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
-                 BadPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
-        return encrypted;
-    }
-
-    /* Decryption Method */
-    public static byte[] decrypt(Key key, byte[] textCrypt)
-    {
-        Cipher cipher;
-        byte[] decrypted = null;
-        try {
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
-            decrypted = cipher.doFinal(textCrypt);
-        } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
-                 InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
-        return decrypted;
-    }
 }

@@ -151,10 +151,10 @@ public class MyWindow extends JFrame {
 
                     System.out.println("Starting tcp socket connection");
                     Socket tcpSocketToServer = new Socket(InetAddress.getByName("rho.cs.oswego.edu"), 30000);
-                    System.out.println("Establishged connection vie port 8000:");
+                    System.out.println("Established connection via port 8000:");
 
 
-                    File tempFile = new File("downloaded"+ currentSelectedFile + ".jpeg");
+                    File tempFile = new File("downloaded"+ currentSelectedFile + ".jpg");
 
                     FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
                     // Get the input stream of the server socket
@@ -271,7 +271,6 @@ public class MyWindow extends JFrame {
                 }
                 String blep = "HOLOAAAAAAAAAAAA";
                 byte[] testString = blep.getBytes();
-                String s = new String(testString);
                 byte[] encryptedString = encrypt(SECRET_KEY, testString);
 
                 /* Call the decrypt() method and store result of decryption. */

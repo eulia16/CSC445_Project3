@@ -68,8 +68,9 @@ public class ServerSlidingWindows implements Runnable{
         public int getNumPackets() throws IOException {
             //we must determine how many packets
             Queue<DatagramPacket> packetsToSend = new LinkedList<>();
+            //File fileToSend = new File("'"+this.fileName + "'.png");
             //grab current file
-            File fileToSend = new File(fileName + ".jpeg");
+            File fileToSend = new File("'"+this.fileName + "'.jpg");
             System.out.println("size of file: " + fileToSend.length());
 
             //get number of packets
@@ -159,9 +160,10 @@ public class ServerSlidingWindows implements Runnable{
         System.out.println("Waiting for connection...");
         Socket clientSocket = serverSocket.accept();
         System.out.println("Connection established!");
-
+        //"/home/sweeks/CSC445/File 2.jpg"
+        //File file = new File("'"+this.fileName + "'.png");
         // Open the file to be transferred
-        File file = new File(fileName+ ".jpeg");
+        File file = new File("'"+this.fileName + "'.jpg");
         FileInputStream fileInputStream = new FileInputStream(file);
 
         // Get the output stream of the client socket
@@ -199,7 +201,8 @@ public class ServerSlidingWindows implements Runnable{
         Queue<DatagramPacket> packetsToSend = new LinkedList<>();
         //grab current file
 
-        File fileToSend = new File(this.fileName + ".jpeg");
+        //File fileToSend = new File("'"+this.fileName + "'.png");
+        File fileToSend = new File("'"+this.fileName + "'.jpg");
         System.out.println("size of file: " + fileToSend.length());
         //get number of packets
         int totalPackets = (int)Math.ceil(fileToSend.length()/(double)512);
