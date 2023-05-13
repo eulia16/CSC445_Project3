@@ -33,8 +33,6 @@ public class RequestHandler implements Runnable{
         //we then will create an initial RRQ packet to send to the first server to let them know we need however much
         //data divided by the size of the file were attempting to download, this is just the original request
         //we have as the datagram packet
-        
-
     }
 
 
@@ -50,12 +48,9 @@ public class RequestHandler implements Runnable{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
     public void beginRoundRobinDataTransmission(){
-
 
         //for each
         for(String s : redundantDataFromServers.keySet()){
@@ -76,15 +71,12 @@ public class RequestHandler implements Runnable{
             //call a new sliding windows
             new SlidingWindows(retainingOACKForSlidingWindowsData.get(s), socket, socketToSendOACK, new String(urlBytes)).run();
         }
-
-
     }
 
     //essentially multicast to servers
     public void sendRequestsToAllServers() throws IOException {
         //***AN OACK MUST BE SENT BACK FROM THE SERVERS AS A RESPONSE TO THE RRQ
-
-        //we must add the port in the requeuest data
+        //we must add the port in the request data
         int counter =0;
         while(request.getData()[counter] != -1){
             counter++;

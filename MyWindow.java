@@ -48,9 +48,9 @@ public class MyWindow extends JFrame {
     private int MAX_NUM_THREADS = 15;
 
     //Doug Lea in decimal ASCII equivalent
-    private static final String SECRET_KEY = "681111171037610197";
+    private static SecretKey SECRET_KEY;
+    private static String password = "DougLea";
     private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
-
     private String proxyString="rho.cs.oswego.edu";
 
     private InetAddress address = InetAddress.getByName(proxyString);
@@ -151,10 +151,10 @@ public class MyWindow extends JFrame {
 
                     System.out.println("Starting tcp socket connection");
                     Socket tcpSocketToServer = new Socket(InetAddress.getByName("rho.cs.oswego.edu"), 30000);
-                    System.out.println("Establishged connection vie port 8000:");
+                    System.out.println("Established connection via port 8000:");
 
 
-                    File tempFile = new File("downloaded"+ currentSelectedFile + ".jpeg");
+                    File tempFile = new File("downloaded"+ currentSelectedFile + ".jpg");
 
                     FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
                     // Get the input stream of the server socket
@@ -260,22 +260,29 @@ public class MyWindow extends JFrame {
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("This will send a specific type of request packet to the proxy server and retireve the list of available files to download");
+                System.out.println("This will send a specific type of request packet to the proxy server and retrieve the list of available files to download");
                 String[] allCurrentFiles = sendFRRQToGetPackets();
-                 //String week[]= { "Fuck","This","Shit"};
                 fileHolders.setListData(allCurrentFiles);
 
+                try {
+                    getKeyFromPassword(password,SALTVALUE);
+                } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+                    throw new RuntimeException(ex);
+                }
                 String blep = "HOLOAAAAAAAAAAAA";
                 byte[] testString = blep.getBytes();
-                String s = new String(testString);
-                String encryptedval = encrypt(s);
-                /* Call the decrypt() method and store result of decryption. */
-                System.out.println("bytes of decrypted bytes: " + decrypt(encryptedval));
-                String decryptedval = decrypt(encryptedval);
+                byte[] encryptedString = encrypt(SECRET_KEY, testString);
 
-                System.out.println("Original value: " + testString);
-                System.out.println("Encrypted value: " + encryptedval);
-                System.out.println("Decrypted value: " + decryptedval);
+                /* Call the decrypt() method and store result of decryption. */
+                //System.out.println("bytes of decrypted bytes: " + decrypt(encryptedval));
+                byte[] unencryptedString = decrypt(SECRET_KEY, encryptedString);
+                String original = new String(unencryptedString);
+
+                System.out.println("Original value: " + blep);
+                System.out.println("Encrypted value: " + encryptedString);
+                System.out.println("Decrypted value: " + unencryptedString);
+                System.out.println("Unencrypted value: " + original);
+
                 uploadFileButton.setEnabled(true);
 
 
@@ -479,7 +486,7 @@ public class MyWindow extends JFrame {
         byte[] buffer = new byte[1024];
         int bytesRead = 0;
         while ((bytesRead = inputStream.read(buffer)) != -1) {
-            fileOutputStream.write(decrypt(new String(buffer)).getBytes(), 0, bytesRead);
+            fileOutputStream.write(decrypt(SECRET_KEY,buffer), 0, bytesRead);
         }
 
         // Close the streams and socket
@@ -492,63 +499,43 @@ public class MyWindow extends JFrame {
         return new byte[4];
     }
 
-    public static String encrypt(String strToEncrypt) {
+
+    private static void getKeyFromPassword(String password, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
+        SECRET_KEY = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+    }
+
+    /* Encryption Method */
+    public static byte[] encrypt(Key key, byte[] content) {
+        Cipher cipher;
+        byte[] encrypted = null;
         try {
-            /* Declare a byte array. */
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
-            /* Create factory for secret keys. */
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            /* PBEKeySpec class implements KeySpec interface. */
-            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-            SecretKey tmp = factory.generateSecret(spec);
-            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-            // Reruns encrypted value
-            return Base64.getEncoder()
-                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
+            encrypted = cipher.doFinal(content);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            e.printStackTrace();
         } catch (InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
         }
+        return encrypted;
     }
 
     /* Decryption Method */
-    public static String decrypt(String strToDecrypt)
+    public static byte[] decrypt(Key key, byte[] textCrypt)
     {
-        try
-        {
-            /* Declare a byte array. */
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
-            /* Create factory for secret keys. */
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            /* PBEKeySpec class implements KeySpec interface. */
-            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-            SecretKey tmp = factory.generateSecret(spec);
-            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-            /* Reruns decrypted value. */
-            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+        Cipher cipher;
+        byte[] decrypted = null;
+        try {
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
+            decrypted = cipher.doFinal(textCrypt);
+        } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
-        catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
-        {
-            System.out.println("Error occured during decryption: " + e.toString());
-        }
-        return null;
+        return decrypted;
     }
-
 }

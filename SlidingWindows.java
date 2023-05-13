@@ -2,16 +2,11 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.Base64;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -23,7 +18,8 @@ public class SlidingWindows implements  Runnable{
     private String fileName;
     private DatagramSocket socketToSendOACK;
 
-    private static final String SECRET_KEY = "681111171037610197";
+    private static SecretKey SECRET_KEY;
+    private static String password = "DougLea";
     private static final String SALTVALUE = "DougLeaIsMyNetworksProfessor";
 
     public SlidingWindows(DatagramPacket packetFromServer, DatagramSocket socket, DatagramSocket socketToSendOACK, String fileName){
@@ -39,7 +35,6 @@ public class SlidingWindows implements  Runnable{
         this.WINDOW_SIZE = ((packetFromServer.getData()[5]) << 8 | (packetFromServer.getData()[4] & 0xFF));
     }
 
-
     @Override
     public void run() {
 
@@ -51,9 +46,7 @@ public class SlidingWindows implements  Runnable{
             return;
             //throw new RuntimeException(e);
         }
-
     }
-
 
     public void slidingWindows() throws IOException {
         //begin receiving packets for sliding windows
@@ -108,7 +101,7 @@ public class SlidingWindows implements  Runnable{
 
                         //ensure you received the next ack you expected
                         //System.out.println("Next Ack Expected: " + nextAckToReceive + ", next ack actually received: " + (int) ((receiveBuffer[3] << 8) | (receiveBuffer[2] & 0xFF)));
-                        byte[] decrypted = decrypt(new String(receiveBuffer)).getBytes(StandardCharsets.UTF_8);
+                        byte[] decrypted = decrypt(SECRET_KEY, receiveBuffer);
                         if(nextAckToReceive == (int) ((decrypted[3] << 8) | (decrypted[2] & 0xFF))) {
 
                             socket.setSoTimeout(100);
@@ -192,65 +185,43 @@ public class SlidingWindows implements  Runnable{
         //socket.close();
 
     }
+    private static void getKeyFromPassword(String password, String salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
+        SECRET_KEY = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+    }
 
-
-    public static String encrypt(String strToEncrypt) {
+    /* Encryption Method */
+    public static byte[] encrypt(Key key, byte[] content) {
+        Cipher cipher;
+        byte[] encrypted = null;
         try {
-            /* Declare a byte array. */
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
-            /* Create factory for secret keys. */
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            /* PBEKeySpec class implements KeySpec interface. */
-            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-            SecretKey tmp = factory.generateSecret(spec);
-            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-            // Reruns encrypted value
-            return Base64.getEncoder()
-                    .encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
+            encrypted = cipher.doFinal(content);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            e.printStackTrace();
         } catch (InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
         }
+        return encrypted;
     }
 
     /* Decryption Method */
-    public static String decrypt(String strToDecrypt)
+    public static byte[] decrypt(Key key, byte[] textCrypt)
     {
-        try
-        {
-            /* Declare a byte array. */
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
-            /* Create factory for secret keys. */
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            /* PBEKeySpec class implements KeySpec interface. */
-            KeySpec spec = new PBEKeySpec(SECRET_KEY.toCharArray(), SALTVALUE.getBytes(), 65536, 256);
-            SecretKey tmp = factory.generateSecret(spec);
-            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-            /* Reruns decrypted value. */
-            return new String(cipher.doFinal(Base64.getDecoder().decode(strToDecrypt)));
+        Cipher cipher;
+        byte[] decrypted = null;
+        try {
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(new byte[16]), new SecureRandom());
+            decrypted = cipher.doFinal(textCrypt);
+        } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException |
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
-        catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException e)
-        {
-            System.out.println("Error occured during decryption: " + e.toString());
-        }
-        return null;
+        return decrypted;
     }
 
 
